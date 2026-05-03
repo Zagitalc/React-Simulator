@@ -20,7 +20,8 @@ function formatValue(v){
   return String(v);
 }
 
-function Inspector({ groups, renderCount }){
+function Inspector({ groups, renderCount, renderCounts, typeRows }){
+  const rcEntries = renderCounts ? Object.entries(renderCounts) : [];
   return (
     <div className="inspector">
       <div className="panel-head">
@@ -51,6 +52,38 @@ function Inspector({ groups, renderCount }){
             </div>
           </div>
         ))}
+        {rcEntries.length > 0 && (
+          <div className="insp-group">
+            <div className="insp-label">
+              <span style={{color: 'var(--accent-3)'}}>render counts</span>
+            </div>
+            <div className="insp-rows">
+              {rcEntries.map(([k, v]) => (
+                <div key={k} className="insp-row">
+                  <span className="insp-key">{k}</span>
+                  <span className="insp-eq">×</span>
+                  <span className="insp-val v-number">{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {typeRows && typeRows.length > 0 && (
+          <div className="insp-group">
+            <div className="insp-label">
+              <span style={{color: 'var(--accent-5)'}}>type check</span>
+            </div>
+            <div className="insp-rows">
+              {typeRows.map((r, i) => (
+                <div key={i} className="insp-row">
+                  <span className="insp-key">{r.key}</span>
+                  <span className="insp-eq">:</span>
+                  <span className="insp-val v-string">{r.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,126 +1,174 @@
-/* Lesson 7: list rendering + keys */
-const listLessonCode = `function PriceTable({ prices }) {
+/* Lesson 6: list rendering + keys — Good vs Bad */
+
+const listGoodCode = `function TodoList() {
+  const [todos, setTodos] = useState([
+    { id: 1, text: "Read docs" },
+    { id: 2, text: "Build demo" },
+  ]);
+
   return (
-    <table>
-      <tbody>
-        {prices.map((row) => (
-          <PriceRow key={row.id} row={row} />
-        ))}
-      </tbody>
-    </table>
+    <ul>
+      {todos.map((t) => (
+        <li key={t.id}>          {/* ✓ stable identity */}
+          <TodoItem todo={t} />
+        </li>
+      ))}
+    </ul>
+  );
+}`;
+
+const listBadCode = `function TodoList() {
+  const [todos, setTodos] = useState([
+    { id: 1, text: "Read docs" },
+    { id: 2, text: "Build demo" },
+  ]);
+
+  return (
+    <ul>
+      {todos.map((t, index) => (
+        <li key={index}>         {/* ❌ identity tied to position */}
+          <TodoItem todo={t} />   {/* internal state ends up on wrong row */}
+        </li>
+      ))}
+    </ul>
+  );
+}`;
+
+let idCounter = 100;
+
+// child component holds its own state — exposes the index-key bug
+function TodoItemWithLocalState({ todo, onRemove }){
+  const [watched, setWatched] = React.useState(false);
+  return (
+    <>
+      <span className="key-tag">{todo.label}</span>
+      <span className="todo-text">{todo.text}</span>
+      <button
+        className={`watch-btn ${watched ? 'on' : ''}`}
+        onClick={() => setWatched(w => !w)}
+      >{watched ? '★' : '☆'}</button>
+      <button className="todo-x" onClick={() => onRemove(todo.id)}>×</button>
+    </>
   );
 }
 
-// Bad example:
-prices.map((row, index) => (
-  <PriceRow key={index} row={row} />
-));`;
+function makeListDemo({ keyMode }){
+  // keyMode: 'id' (good) | 'index' (bad)
+  return function ListDemo({ trace }){
+    const [todos, setTodos] = React.useState([
+      { id: 1, text: 'Read docs' },
+      { id: 2, text: 'Build demo' },
+      { id: 3, text: 'Ship it' },
+    ]);
+    const renderRef = React.useRef(0);
+    renderRef.current++;
 
-let priceIdCounter = 100;
+    React.useEffect(() => {
+      trace.log('mount', 'TodoList mounted', `${todos.length} initial items, key=${keyMode}`);
+    }, []);
 
-function ListDemo({ trace }){
-  const initialPrices = [
-    { id: 'ts-sd-1', product: 'Cola 12 x 330ml', retailer: 'Tesco', shelfPrice: 5.50 },
-    { id: 'ts-sd-2', product: 'Orange Fizz 2L', retailer: 'Tesco', shelfPrice: 1.85 },
-    { id: 'ts-sd-3', product: 'Lemonade 2L', retailer: 'Tesco', shelfPrice: 2.15 },
-  ];
-  const [prices, setPrices] = React.useState(initialPrices);
-  const renderRef = React.useRef(0);
-  renderRef.current++;
+    const add = () => {
+      const id = ++idCounter;
+      const text = ['Refactor','Write tests','Open PR','Review','Deploy'][Math.floor(Math.random()*5)];
+      trace.tick();
+      trace.log('event', 'onClick add', '');
+      trace.log('state', `setTodos([…, { id:${id} }])`, '');
+      setTodos(t => [...t, { id, text }]);
+    };
 
-  React.useEffect(() => {
-    trace.log('mount', 'PriceTable mounted', `${prices.length} initial price rows`);
-  }, []);
+    const remove = (id) => {
+      trace.tick();
+      trace.log('event', 'onClick remove', `id=${id}`);
+      trace.log('state', `setTodos(filter id !== ${id})`, '');
+      if (keyMode === 'index'){
+        trace.log('render', 'list re-rendered',
+          'React reused wrong row identity',
+          'index keys break identity when list reorders');
+      } else {
+        trace.log('render', 'list re-rendered',
+          'React diffed by id key — internal state stayed with the right item');
+      }
+      setTodos(t => t.filter(x => x.id !== id));
+    };
 
-  const add = () => {
-    const id = `new-${++priceIdCounter}`;
-    const products = [
-      { product: 'Sparkling Water 12pk', shelfPrice: 4.20 },
-      { product: 'Sharing Crisps 180g', shelfPrice: 2.30 },
-      { product: 'Ground Coffee 227g', shelfPrice: 4.95 },
-    ];
-    const next = products[Math.floor(Math.random() * products.length)];
-    trace.tick();
-    trace.log('event', 'onClick add row', '');
-    trace.log('state', `setPrices([..., { id: "${id}" }])`, '');
-    trace.log('render', 'PriceTable', 'reason: prices state changed');
-    setPrices(rows => [...rows, { id, retailer: 'Tesco', ...next }]);
-  };
+    const shuffle = () => {
+      trace.tick();
+      trace.log('event', 'shuffle', 'reordered array');
+      if (keyMode === 'index'){
+        trace.log('render', 'list re-rendered',
+          'BUG: watch ★ markers stayed at the same positions, not the same items',
+          'index keys → React thinks the item at index 0 is the same item');
+      } else {
+        trace.log('render', 'list re-rendered', 'keys preserved identity — ★ followed each item');
+      }
+      setTodos(t => [...t].sort(() => Math.random() - 0.5));
+    };
 
-  const remove = (id) => {
-    trace.tick();
-    trace.log('event', 'onClick remove row', `id = "${id}"`);
-    trace.log('state', `setPrices(filter id !== "${id}")`, '');
-    trace.log('render', 'PriceTable', 'reason: prices state changed; stable keys preserve row identity');
-    setPrices(rows => rows.filter(row => row.id !== id));
-  };
-
-  const shuffle = () => {
-    trace.tick();
-    trace.log('event', 'sort by price', 'rows reordered');
-    trace.log('render', 'PriceTable', 'reason: row order changed; keys keep rows matched');
-    setPrices(rows => [...rows].sort((a, b) => b.shelfPrice - a.shelfPrice));
-  };
-
-  return (
-    <div className="demo-frame">
-      <div className="demo-stage">
-        <div className="filter-row">
-          <button className="chip" onClick={add}>add row</button>
-          <button className="chip" onClick={shuffle}>sort by price</button>
-          <button className="demo-reset" onClick={() => { setPrices(initialPrices); trace.clear(); renderRef.current = 0; }}>reset</button>
-        </div>
-        <div className="data-table">
-          <div className="th">
-            <span>Product</span><span>Retailer</span><span>Shelf Price</span><span>Key</span><span>Action</span>
+    return (
+      <div className="demo-frame">
+        <div className="demo-stage">
+          <div className="filter-row">
+            <button className="chip" onClick={add}>+ add</button>
+            <button className="chip" onClick={shuffle}>shuffle</button>
+            <button className="demo-reset" onClick={() => { setTodos([{id:1,text:'Read docs'},{id:2,text:'Build demo'},{id:3,text:'Ship it'}]); trace.clear(); renderRef.current = 0; }}>reset</button>
           </div>
-          {prices.map(row => (
-            <div key={row.id} className="tr">
-              <span>{row.product}</span>
-              <span>{row.retailer}</span>
-              <span className="num">£{row.shelfPrice.toFixed(2)}</span>
-              <span className="key-tag">key={row.id}</span>
-              <button className="todo-x" onClick={() => remove(row.id)}>x</button>
-            </div>
-          ))}
-          {prices.length === 0 && <div className="loading-row">empty table</div>}
+          <ul className="todo-list">
+            {todos.map((t, index) => {
+              const k = keyMode === 'index' ? index : t.id;
+              const label = keyMode === 'index' ? `key=${index}` : `key=${t.id}`;
+              return (
+                <li key={k} className="todo-item">
+                  <TodoItemWithLocalState
+                    todo={{ ...t, label }}
+                    onRemove={remove}
+                  />
+                </li>
+              );
+            })}
+            {todos.length === 0 && <li className="todo-empty">empty list</li>}
+          </ul>
+          <div className="demo-meta">
+            <span>{todos.length} items · keyed by <b>{keyMode}</b></span>
+          </div>
         </div>
-        <div className="small-code">
-          Bad: key=&#123;index&#125; when rows can be inserted, removed, or reordered.
+        <div className="demo-explainer">
+          <p>Toggle the <b>★</b> on a couple of rows, then click <b>shuffle</b>. With <b>id</b> keys the stars follow each item. With <b>index</b> keys the stars stay glued to the visible position — that's the bug.</p>
         </div>
-        <div className="demo-meta">
-          <span>{prices.length} rows</span>
-        </div>
-      </div>
-      <div className="demo-explainer">
-        <p><b>Keys</b> tell React which row is which across renders. Product IDs are stable, so React can track row identity when pricing rows move or disappear.</p>
-      </div>
-      <Inspector
-        renderCount={renderRef.current}
-        groups={[
-          { label: 'state', color: 'var(--accent-2)', component: 'PriceTableDemo', entries: [
-            { key: 'prices.length', value: prices.length, changed: prices.length !== 3 },
-            { key: 'rowIds', value: prices.map(row => row.id), changed: false },
-          ]},
-          { label: 'props', color: 'var(--accent)', component: 'PriceRow', entries: [
-            { key: 'row', value: prices[0] || null, changed: false },
+        <Inspector
+          renderCount={renderRef.current}
+          groups={[
+            { label: 'state', color: 'var(--accent-2)', component: 'TodoList', entries: [
+              { key: 'todos.length', value: todos.length, changed: false },
+              { key: 'order',        value: todos.map(t => t.id), changed: false },
+              { key: 'keyMode',      value: keyMode, changed: false },
+            ]}
           ]}
-        ]}
-      />
-    </div>
-  );
+        />
+      </div>
+    );
+  };
 }
+
+const ListGoodDemo = makeListDemo({ keyMode: 'id' });
+const ListBadDemo  = makeListDemo({ keyMode: 'index' });
 
 window.LESSON_list = {
   id: 'list',
   title: 'Lists & keys',
-  subtitle: 'stable product IDs',
-  code: listLessonCode,
-  highlightLines: [5, 6, 14, 15],
-  interviewAnswer: 'Using stable IDs helps React track list items correctly across re-renders. Index keys can cause bugs when rows are inserted, removed, or reordered because React may match the wrong component instance to the wrong data row.',
+  subtitle: 'identity across renders',
+  code: listGoodCode,
+  highlightLines: [10, 11, 12],
   notes: [
-    { title: 'Why keys?', body: 'React uses keys to match items across renders. Without them or with index keys, React cannot tell if an item moved or changed, and may rebuild DOM unnecessarily.' },
-    { title: 'Use stable IDs', body: 'A product or price-row ID is a strong key. The array index is a fallback only when the list never reorders.' },
+    { title: 'Why keys?', body: 'React uses keys to match items across renders. Without stable keys, React cannot tell if an item moved or changed, and child state ends up attached to position rather than data.' },
+    { title: 'Use stable IDs', body: 'A row’s database ID is a perfect key. The array index is a fallback only when the list never reorders.' },
   ],
-  Demo: ListDemo,
+  variants: {
+    good: { code: listGoodCode, highlightLines: [10, 11, 12], Demo: ListGoodDemo },
+    bad:  { code: listBadCode,  highlightLines: [10, 11, 12], Demo: ListBadDemo },
+  },
+  challenge: {
+    prompt: 'Toggle ★ on the first two rows, then click shuffle. In Bad mode (key={index}) the stars stop tracking the right items. Why?',
+    answer: 'React identifies list children by their key. With key={index}, the row at position 0 is "the same row" before and after a shuffle, even though the underlying todo changed. Internal state inside that row (the ★) belongs to the position, not the todo, so it visually attaches to the wrong item. With key={id}, React matches each rendered row to its data and the state moves with the item.'
+  },
+  Demo: ListGoodDemo,
 };

@@ -1,232 +1,239 @@
-/* Lesson 4: useEffect with mock API */
-const useEffectLessonCode = `function PriceDashboard() {
-  const [retailer, setRetailer] = useState("Tesco");
-  const [category, setCategory] = useState("Soft Drinks");
-  const [prices, setPrices] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+/* Lesson 4: useEffect — Good vs Bad (stale deps / no deps) */
+
+const useEffectGoodCode = `function ProductList() {
+  const [category, setCategory] = useState("fruit");
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch(\`/api/prices?retailer=\${retailer}&category=\${category}\`)
+    fetch(\`/api/items?cat=\${category}\`)
       .then((res) => res.json())
-      .then((data) => {
-        setPrices(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Could not load prices");
-        setLoading(false);
-      });
-  }, [retailer, category]);
-
-  return <PriceTable prices={prices} loading={loading} />;
+      .then(setItems);
+  }, [category]); // ✓ refetch when category changes
 }`;
 
-const PRICE_DATA = {
-  Tesco: {
-    'Soft Drinks': [
-      { id: 'ts-sd-1', product: 'Cola 12 x 330ml', retailer: 'Tesco', shelfPrice: 5.50, promoPrice: 4.25, date: '2026-05-01' },
-      { id: 'ts-sd-2', product: 'Orange Fizz 2L', retailer: 'Tesco', shelfPrice: 1.85, promoPrice: 1.35, date: '2026-05-02' },
-    ],
-    Crisps: [
-      { id: 'ts-cr-1', product: 'Sea Salt Crisps 6pk', retailer: 'Tesco', shelfPrice: 2.25, promoPrice: 1.75, date: '2026-05-01' },
-      { id: 'ts-cr-2', product: 'Ridged Crisps 150g', retailer: 'Tesco', shelfPrice: 1.95, promoPrice: null, date: '2026-05-02' },
-    ],
-    Coffee: [
-      { id: 'ts-co-1', product: 'Ground Coffee 227g', retailer: 'Tesco', shelfPrice: 4.80, promoPrice: 3.95, date: '2026-05-01' },
-      { id: 'ts-co-2', product: 'Instant Coffee 200g', retailer: 'Tesco', shelfPrice: 6.40, promoPrice: 5.50, date: '2026-05-02' },
-    ],
-  },
-  "Sainsbury's": {
-    'Soft Drinks': [
-      { id: 'sa-sd-1', product: 'Lemonade 2L', retailer: "Sainsbury's", shelfPrice: 1.75, promoPrice: 1.25, date: '2026-05-01' },
-      { id: 'sa-sd-2', product: 'Cola Zero 8 x 330ml', retailer: "Sainsbury's", shelfPrice: 4.90, promoPrice: null, date: '2026-05-02' },
-    ],
-    Crisps: [
-      { id: 'sa-cr-1', product: 'Cheese Crisps 6pk', retailer: "Sainsbury's", shelfPrice: 2.35, promoPrice: 1.85, date: '2026-05-01' },
-      { id: 'sa-cr-2', product: 'Tortilla Chips 180g', retailer: "Sainsbury's", shelfPrice: 2.10, promoPrice: 1.60, date: '2026-05-02' },
-    ],
-    Coffee: [
-      { id: 'sa-co-1', product: 'Espresso Beans 500g', retailer: "Sainsbury's", shelfPrice: 7.25, promoPrice: 6.00, date: '2026-05-01' },
-      { id: 'sa-co-2', product: 'Decaf Instant 100g', retailer: "Sainsbury's", shelfPrice: 3.90, promoPrice: null, date: '2026-05-02' },
-    ],
-  },
-  Ocado: {
-    'Soft Drinks': [
-      { id: 'oc-sd-1', product: 'Sparkling Water 12pk', retailer: 'Ocado', shelfPrice: 4.20, promoPrice: 3.60, date: '2026-05-01' },
-      { id: 'oc-sd-2', product: 'Ginger Beer 4pk', retailer: 'Ocado', shelfPrice: 3.40, promoPrice: null, date: '2026-05-02' },
-    ],
-    Crisps: [
-      { id: 'oc-cr-1', product: 'Vegetable Crisps 100g', retailer: 'Ocado', shelfPrice: 2.60, promoPrice: 2.00, date: '2026-05-01' },
-      { id: 'oc-cr-2', product: 'Sharing Crisps 180g', retailer: 'Ocado', shelfPrice: 2.30, promoPrice: 1.90, date: '2026-05-02' },
-    ],
-    Coffee: [
-      { id: 'oc-co-1', product: 'Cold Brew Cans 4pk', retailer: 'Ocado', shelfPrice: 5.80, promoPrice: 4.75, date: '2026-05-01' },
-      { id: 'oc-co-2', product: 'Filter Coffee 250g', retailer: 'Ocado', shelfPrice: 4.65, promoPrice: null, date: '2026-05-02' },
-    ],
-  },
+const useEffectBadCode = `function ProductList() {
+  const [category, setCategory] = useState("fruit");
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    fetch(\`/api/items?cat=\${category}\`)
+      .then((res) => res.json())
+      .then(setItems);
+  }, []); // ❌ runs once — table goes stale when category changes
+}`;
+
+const useEffectBadAltCode = `function ProductList() {
+  const [category, setCategory] = useState("fruit");
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    fetch(\`/api/items?cat=\${category}\`)
+      .then((res) => res.json())
+      .then(setItems);
+  }); // ❌ no deps — fires after every render, repeated fetches
+}`;
+
+const MOCK_DATA = {
+  fruit:  [{ id:1, name:'Apple', price:1.20 }, { id:2, name:'Banana', price:0.40 }, { id:3, name:'Mango', price:2.10 }],
+  bakery: [{ id:4, name:'Croissant', price:2.50 }, { id:5, name:'Sourdough', price:5.00 }],
+  drinks: [{ id:6, name:'Cold Brew', price:3.80 }, { id:7, name:'Sparkling', price:1.90 }, { id:8, name:'Espresso', price:2.60 }, { id:9, name:'Matcha', price:4.20 }],
 };
 
-function UseEffectDemo({ trace }){
-  const [retailer, setRetailer] = React.useState('Tesco');
-  const [category, setCategory] = React.useState('Soft Drinks');
-  const [prices, setPrices] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
-  const renderRef = React.useRef(0);
-  renderRef.current++;
-  const requestId = React.useRef(0);
-  const initialRenderLogged = React.useRef(false);
+function makeUseEffectDemo({ depMode }){
+  // depMode: 'good' = [category], 'stale' = [], 'every' = no deps
+  return function UseEffectDemo({ trace, onDemoState }){
+    const [category, setCategory] = React.useState('fruit');
+    const [items, setItems] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const renderRef = React.useRef(0);
+    renderRef.current++;
+    const requestId = React.useRef(0);
 
-  React.useEffect(() => {
-    trace.log('mount', 'PriceDashboard mounted', 'retailer = "Tesco", category = "Soft Drinks"');
-  }, []);
+    React.useEffect(() => {
+      onDemoState && onDemoState({ category });
+    }, [category, onDemoState]);
 
-  React.useEffect(() => {
-    if (initialRenderLogged.current){
-      trace.log('render', 'PriceDashboard', `reason: ${retailer} / ${category} filter state changed`);
-    } else {
-      initialRenderLogged.current = true;
-    }
-    trace.tick();
-    trace.log('effect', 'useEffect ran', `deps changed: retailer = "${retailer}", category = "${category}"`);
-    trace.log('state', 'setLoading(true)', '');
-    trace.log('state', 'setError(null)', '');
-    trace.log('fetch', `GET /api/prices?retailer=${retailer}&category=${category}`, 'request sent (700ms)');
-    setLoading(true);
-    setError(null);
-    const myId = ++requestId.current;
-    const t = setTimeout(() => {
-      if (myId !== requestId.current) return; // staleness guard
-      if (category === 'Coffee' && retailer === 'Ocado'){
+    React.useEffect(() => {
+      trace.log('mount', 'ProductList mounted', 'category = "fruit"');
+    }, []);
+
+    // The actual effect under study, varies by depMode
+    const runFetch = (catArg) => {
+      trace.log('effect', 'useEffect ran', `dep mode: ${depMode}`,
+        depMode === 'good'  ? 'category in deps → re-runs only when it changes' :
+        depMode === 'stale' ? 'empty deps means effect runs only once' :
+                              'no deps array means run after every render'
+      );
+      trace.log('fetch', `GET /api/items?cat=${catArg}`, 'request sent (700ms)');
+      setLoading(true);
+      const myId = ++requestId.current;
+      setTimeout(() => {
+        if (myId !== requestId.current) return;
+        const data = MOCK_DATA[catArg] || [];
         trace.tick();
-        trace.log('fetch', '500 Error', 'pricing API failed');
-        trace.log('state', 'setError("Could not load prices")', '');
-        trace.log('state', 'setLoading(false)', '');
-        trace.log('render', 'PriceDashboard', 'reason: error state changed');
-        setPrices([]);
-        setError('Could not load prices');
+        trace.log('fetch', `200 OK`, `${data.length} items returned`);
+        setItems(data);
         setLoading(false);
-        return;
-      }
-      const data = PRICE_DATA[retailer][category] || [];
-      trace.tick();
-      trace.log('fetch', `200 OK`, `${data.length} price rows returned`);
-      trace.log('state', `setPrices([…${data.length}])`, 'data into state');
-      trace.log('state', 'setLoading(false)', '');
-      trace.log('render', 'PriceTable', 'reason: prices prop changed');
-      trace.log('prop', '<PriceTable>', `prices = Array(${data.length}), loading = false, selectedRetailer = "${retailer}"`);
-      setPrices(data);
-      setLoading(false);
-    }, 700);
-    return () => {
-      clearTimeout(t);
+      }, 700);
     };
-  }, [retailer, category]);
 
-  const changeRetailer = (value) => {
-    if (value === retailer) return;
-    trace.tick();
-    trace.log('event', 'onClick retailer filter', `retailer = "${value}"`);
-    trace.log('state', `setRetailer("${value}")`, '');
-    setRetailer(value);
-  };
+    if (depMode === 'good'){
+      React.useEffect(() => {
+        trace.tick();
+        runFetch(category);
+      }, [category]);
+    } else if (depMode === 'stale'){
+      React.useEffect(() => {
+        trace.tick();
+        runFetch(category); // captured at first render — won't update
+      }, []);
+    } else {
+      // every render — unconstrained
+      React.useEffect(() => {
+        trace.tick();
+        runFetch(category);
+      });
+    }
 
-  const changeCategory = (value) => {
-    if (value === category) return;
-    trace.tick();
-    trace.log('event', 'onClick category filter', `category = "${value}"`);
-    trace.log('state', `setCategory("${value}")`, '');
-    setCategory(value);
-  };
+    // surface the "stale" bug visually
+    const showingStale = depMode === 'stale' && items.length > 0 && !MOCK_DATA[category].some(x => items.find(i => i.id === x.id));
 
-  return (
-    <div className="demo-frame">
-      <div className="demo-stage">
-        <div className="filter-row">
-          {['Tesco',"Sainsbury's",'Ocado'].map(r => (
-            <button
-              key={r}
-              className={`chip ${retailer===r?'on':''}`}
-              onClick={() => changeRetailer(r)}
-            >{r}</button>
-          ))}
-        </div>
-        <div className="filter-row">
-          {['Soft Drinks','Crisps','Coffee'].map(c => (
-            <button
-              key={c}
-              className={`chip ${category===c?'on':''}`}
-              onClick={() => changeCategory(c)}
-            >{c}</button>
-          ))}
-        </div>
-        <div className="data-table">
-          <div className="th">
-            <span>Product</span><span>Retailer</span><span>Shelf Price</span><span>Promo Price</span><span>Date</span>
+    const change = (cat) => {
+      if (cat === category) return;
+      trace.tick();
+      trace.log('event', 'onClick filter', `category → "${cat}"`);
+      trace.log('state', `setCategory("${cat}")`, '');
+      if (depMode === 'stale'){
+        // proactive note in timeline since the effect won't run
+        trace.log('effect', 'useEffect skipped',
+          'deps unchanged — empty array', 'BUG: table will keep old data');
+      }
+      setCategory(cat);
+    };
+
+    return (
+      <div className="demo-frame">
+        <div className="demo-stage">
+          <div className="filter-row">
+            {['fruit','bakery','drinks'].map(c => (
+              <button
+                key={c}
+                className={`chip ${category===c?'on':''}`}
+                onClick={() => change(c)}
+              >{c}</button>
+            ))}
           </div>
-          {loading && (
-            <div className="loading-row">
-              <span className="spinner"></span> fetching {retailer} / {category}
+          <div className="data-table">
+            <div className="th">
+              <span>id</span><span>name</span><span>price</span>
+            </div>
+            {loading && (
+              <div className="loading-row">
+                <span className="spinner"></span> fetching {category}…
+              </div>
+            )}
+            {!loading && items.map(it => (
+              <div key={it.id} className="tr">
+                <span className="num">{it.id}</span>
+                <span>{it.name}</span>
+                <span className="num">£{it.price.toFixed(2)}</span>
+              </div>
+            ))}
+            {!loading && items.length === 0 && <div className="loading-row">no rows</div>}
+          </div>
+          {showingStale && (
+            <div className="demo-explainer" style={{borderLeftColor: 'var(--accent-4)'}}>
+              <b>BUG:</b> table still shows old category — effect never re-ran because deps array is empty.
             </div>
           )}
-          {!loading && error && <div className="error-row">{error}</div>}
-          {!loading && !error && prices.map(row => (
-            <div key={row.id} className="tr">
-              <span>{row.product}</span>
-              <span>{row.retailer}</span>
-              <span className="num">£{row.shelfPrice.toFixed(2)}</span>
-              <span className="promo">{row.promoPrice ? `£${row.promoPrice.toFixed(2)}` : '-'}</span>
-              <span className="date">{row.date}</span>
-            </div>
-          ))}
-          {!loading && !error && prices.length === 0 && <div className="loading-row">no rows</div>}
+          <div className="demo-meta">
+            <span>renders: <b>{renderRef.current}</b></span>
+            <span>mode: <b>{depMode}</b></span>
+          </div>
         </div>
-        <div className="demo-meta">
-          <span>renders: <b>{renderRef.current}</b></span>
-          <button className="demo-reset" onClick={() => { setRetailer('Tesco'); setCategory('Soft Drinks'); setPrices([]); setError(null); trace.clear(); renderRef.current = 0; }}>reset</button>
+        <div className="demo-explainer">
+          <p><b>useEffect</b> runs side effects after render. The dependency array tells React when to re-run it. Toggle Good/Bad above to see what wrong deps do.</p>
         </div>
-      </div>
-      <div className="demo-explainer">
-        <p><b>useEffect</b> runs side effects after render. The dependency array <code>[retailer, category]</code> tells React to fetch again when either filter changes.</p>
-      </div>
-      <Inspector
-        renderCount={renderRef.current}
-        groups={[
-          { label: 'state', color: 'var(--accent-2)', component: 'PriceDashboard', entries: [
-            { key: 'retailer', value: retailer, changed: retailer !== 'Tesco' },
-            { key: 'category', value: category, changed: category !== 'Soft Drinks' },
-            { key: 'prices',   value: prices, changed: prices.length > 0 },
-            { key: 'loading',  value: loading, changed: loading },
-            { key: 'error',    value: error, changed: !!error },
-          ]},
-          { label: 'effect', color: 'var(--accent-5)', component: 'PriceDashboard', entries: [
-            { key: 'deps', value: [retailer, category], changed: false },
-          ]},
-          { label: 'props', color: 'var(--accent)', component: 'PriceTable', entries: [
-            { key: 'prices', value: prices, changed: prices.length > 0 },
-            { key: 'loading', value: loading, changed: loading },
-            { key: 'selectedRetailer', value: retailer, changed: retailer !== 'Tesco' },
+        <Inspector
+          renderCount={renderRef.current}
+          groups={[
+            { label: 'state', color: 'var(--accent-2)', component: 'ProductList', entries: [
+              { key: 'category', value: category, changed: category !== 'fruit' },
+              { key: 'items',    value: items, changed: items.length > 0 },
+              { key: 'loading',  value: loading, changed: loading },
+            ]},
+            { label: 'effect', color: 'var(--accent-5)', component: 'ProductList', entries: [
+              { key: 'deps', value: depMode === 'good' ? [category] : depMode === 'stale' ? [] : '(none)', changed: false },
+            ]}
           ]}
-        ]}
-      />
-    </div>
-  );
+        />
+      </div>
+    );
+  };
 }
+
+const UseEffectGoodDemo = makeUseEffectDemo({ depMode: 'good' });
+const UseEffectBadDemo = makeUseEffectDemo({ depMode: 'stale' });
+const UseEffectBadAltDemo = makeUseEffectDemo({ depMode: 'every' });
 
 window.LESSON_useEffect = {
   id: 'useEffect',
   title: 'useEffect',
-  subtitle: 'API fetch + dependencies',
-  code: useEffectLessonCode,
-  highlightLines: [2, 3, 7, 18],
-  interviewAnswer: 'useEffect is used for side effects like API calls. In this example, when retailer or category changes, React re-renders and then runs the effect because those values are in the dependency array. The effect fetches new pricing data and updates loading, success, and error state when the response returns.',
+  subtitle: 'side effects + deps',
+  code: useEffectGoodCode,
+  highlightLines: [6, 11],
   notes: [
-    { title: 'Side effects, not pure', body: 'Render functions should be pure. Anything that touches the outside world, such as fetch, subscriptions, or timers, goes in useEffect.' },
+    { title: 'Side effects, not pure', body: 'Render functions should be pure. Anything that touches the outside world — fetch, subscriptions, timers — goes in useEffect.' },
     { title: 'The dependency array', body: '[] = run once after mount. [a, b] = run when a or b changes. Omitted = run after every render (rarely what you want).' },
-    { title: 'Explicit request states', body: 'This demo models loading, success, and error states instead of assuming that every API call succeeds.' },
   ],
-  Demo: UseEffectDemo,
+  variants: {
+    good:   { code: useEffectGoodCode,   highlightLines: [6,7,8,9,10,11], Demo: UseEffectGoodDemo, label: 'Good' },
+    bad:    { code: useEffectBadCode,    highlightLines: [6,7,8,9,10,11], Demo: UseEffectBadDemo,  label: 'Bad: stale deps' },
+    badAlt: { code: useEffectBadAltCode, highlightLines: [6,7,8,9,10,11], Demo: UseEffectBadAltDemo, label: 'Bad: no deps' },
+  },
+  challenge: {
+    prompt: 'Switch retailer/category between Good and Bad mode. Why does the Bad mode keep showing stale data, and why does the "no deps" mode flood the network tab?',
+    answer: '"Bad: stale deps" passes [] so React captures the original category and never re-runs the effect — the table shows the first category forever. "Bad: no deps" omits the array entirely, which means React runs the effect after every render; setting state inside it triggers another render, which triggers the effect again, repeating fetches. Good mode lists [category] so the effect only re-runs when category actually changes — no staleness, no over-fetching.'
+  },
+  types: `type Item = { id: number; name: string; price: number };
+type Category = 'fruit' | 'bakery' | 'drinks';
+
+// Effect signature
+function useEffect(
+  effect: () => void | (() => void),
+  deps?: React.DependencyList
+): void;`,
+  backend: {
+    language: 'ts',
+    source: `// Backend route the dashboard hits
+import Router from '@koa/router';
+const router = new Router();
+
+router.get('/api/items', async (ctx) => {
+  const { cat } = ctx.query;
+  const rows = await db.query(/* see SQL tab */, { cat });
+  ctx.body = rows;
+});`,
+    flow: [
+      'user clicks category chip → onClick handler',
+      'setCategory → React re-renders',
+      'useEffect sees deps change → runs',
+      'fetch /api/items?cat=… → backend route',
+      'backend runs SQL, returns JSON',
+      'setItems → table re-renders',
+    ],
+  },
+  sql: {
+    template: `SELECT
+  p.id,
+  p.name,
+  ps.shelf_price AS price
+FROM products p
+JOIN price_snapshots ps ON ps.product_id = p.id
+WHERE p.category = :cat
+ORDER BY ps.captured_at DESC
+LIMIT 50;`,
+    params: (s) => ({ cat: s.category || 'fruit' }),
+  },
+  Demo: UseEffectGoodDemo,
 };

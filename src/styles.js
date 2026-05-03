@@ -519,6 +519,128 @@
   .bottombar .sep{ color: var(--line-2); }
   .bottombar .muted{ color: var(--fg-mute); margin-left: auto; }
 
+  /* tl-why */
+  .tl-why{
+    grid-column: 4;
+    color: var(--fg-mute); font-size: 10.5px; font-style: italic;
+    padding-left: 0;
+  }
+
+  /* variant toggle (Good/Bad) */
+  .variant-toggle{
+    display: inline-flex; gap: 0;
+    border: 1px solid var(--line-2); border-radius: 6px; overflow: hidden;
+    margin-left: auto;
+  }
+  .variant-btn{
+    background: transparent; border: none;
+    padding: 4px 12px; cursor: pointer;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--fg-mute);
+    border-right: 1px solid var(--line-2);
+    transition: all 0.15s;
+  }
+  .variant-btn:last-child{ border-right: none; }
+  .variant-btn:hover{ color: var(--fg); }
+  .variant-btn.on.good{ background: oklch(0.65 0.15 145 / 0.15); color: var(--accent-2); }
+  .variant-btn.on.bad{  background: oklch(0.65 0.18 25  / 0.15); color: var(--accent-4); }
+  .variant-btn.on.badAlt{ background: oklch(0.65 0.18 25 / 0.10); color: var(--accent-4); }
+
+  /* code-pane tabs */
+  .tab-row{
+    display: flex; gap: 0;
+    padding: 0 16px; border-bottom: 1px solid var(--line);
+    background: var(--bg-1); flex-shrink: 0;
+  }
+  .tab-btn{
+    background: transparent; border: none;
+    padding: 8px 14px; cursor: pointer;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+    color: var(--fg-mute);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover{ color: var(--fg); }
+  .tab-btn.on{ color: var(--accent); border-bottom-color: var(--accent); }
+
+  .flow-list{
+    list-style: decimal inside;
+    padding: 12px 16px; margin: 0;
+    font-family: var(--mono); font-size: 11.5px;
+    color: var(--fg-dim);
+    border-top: 1px dashed var(--line-2);
+    background: var(--bg-1);
+  }
+  .flow-list li{ padding: 2px 0; }
+
+  /* challenge card */
+  .challenge-card{
+    border-top: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 14px 16px;
+    border-left: 3px solid var(--accent);
+    display: flex; flex-direction: column; gap: 8px;
+    flex-shrink: 0;
+  }
+  .challenge-card .ch-tag{
+    font-family: var(--mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--accent);
+  }
+  .challenge-card .ch-prompt{
+    font-size: 13px; line-height: 1.55; color: var(--fg);
+    text-wrap: pretty;
+  }
+  .challenge-card .ch-reveal{
+    align-self: flex-start;
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 12px; border-radius: 4px; cursor: pointer;
+    font-family: var(--mono); font-size: 11px;
+  }
+  .challenge-card .ch-answer{
+    background: var(--bg-2);
+    padding: 10px 12px; border-radius: 4px;
+    font-size: 12.5px; line-height: 1.55; color: var(--fg-dim);
+    border-left: 2px solid var(--accent-2);
+    text-wrap: pretty;
+  }
+
+  /* price-table (useCallback lesson) */
+  .price-table{
+    border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden;
+    background: var(--bg);
+    font-family: var(--mono); font-size: 12px;
+  }
+  .price-table .th, .price-table .tr{
+    display: grid; grid-template-columns: 1fr 80px 70px 90px;
+    padding: 9px 12px; gap: 10px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+  }
+  .price-table .th{
+    background: var(--bg-2); color: var(--fg-mute);
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .price-table .tr:last-child{ border-bottom: none; }
+  .price-table .tr.watched{ background: var(--accent-soft); }
+  .price-table .renders{
+    font-family: var(--mono); color: var(--accent-3); font-size: 11px;
+    text-align: right;
+  }
+  .price-table .renders.hot{ color: var(--accent-4); font-weight: 600; }
+  .watch-btn{
+    background: transparent; border: 1px solid var(--line-2);
+    color: var(--fg-mute);
+    padding: 3px 10px; border-radius: 4px; cursor: pointer;
+    font-family: var(--mono); font-size: 10.5px;
+    transition: all 0.12s;
+  }
+  .watch-btn:hover{ color: var(--fg); border-color: var(--fg-mute); }
+  .watch-btn.on{ color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
   /* responsive squish */
   @media (max-width: 1280px){
     .main{ grid-template-columns: 1fr 1fr 1fr; }

@@ -1,76 +1,73 @@
 /* Lesson 5: useMemo */
-const useMemoLessonCode = `function PriceStats({ prices }) {
+const useMemoLessonCode = `function PriceStats({ items }) {
   const [filter, setFilter] = useState("");
 
-  const averagePrice = useMemo(() => {
-    if (prices.length === 0) return 0;
-    return prices.reduce((sum, item) =>
-      sum + item.shelfPrice, 0) / prices.length;
-  }, [prices]);
-
-  const promotionCount = useMemo(() => {
-    return prices.filter((item) => item.promoPrice).length;
-  }, [prices]);
+  const average = useMemo(() => {
+    if (!items.length) return 0;
+    return items.reduce((sum, it) =>
+      sum + it.price, 0) / items.length;
+  }, [items]);
 
   return (
     <div>
       <input value={filter}
         onChange={(e) => setFilter(e.target.value)} />
-      <p>Average shelf price: £{averagePrice.toFixed(2)}</p>
-      <p>Promotion count: {promotionCount}</p>
+      <p>Average: \${average.toFixed(2)}</p>
     </div>
   );
 }`;
 
-const MEMO_PRICES_A = [
-  { id:'ts-sd-1', product:'Cola 12 x 330ml', shelfPrice:5.50, promoPrice:4.25 },
-  { id:'ts-sd-2', product:'Orange Fizz 2L', shelfPrice:1.85, promoPrice:1.35 },
-  { id:'ts-sd-3', product:'Lemonade 2L', shelfPrice:2.15, promoPrice:null },
-  { id:'ts-sd-4', product:'Energy Drink 4pk', shelfPrice:4.80, promoPrice:3.90 },
+const MEMO_ITEMS_A = [
+  { id:1, name:'Apple',   price:1.20 },
+  { id:2, name:'Banana',  price:0.40 },
+  { id:3, name:'Mango',   price:2.10 },
+  { id:4, name:'Pear',    price:1.80 },
 ];
-const MEMO_PRICES_B = [
-  { id:'sa-co-1', product:'Espresso Beans 500g', shelfPrice:7.25, promoPrice:6.00 },
-  { id:'sa-co-2', product:'Decaf Instant 100g', shelfPrice:3.90, promoPrice:null },
-  { id:'sa-co-3', product:'Ground Coffee 227g', shelfPrice:4.95, promoPrice:4.20 },
+const MEMO_ITEMS_B = [
+  { id:5, name:'Croissant', price:2.50 },
+  { id:6, name:'Sourdough', price:5.00 },
+  { id:7, name:'Bagel',     price:1.75 },
 ];
 
-function UseMemoDemo({ trace }){
-  const [dataset, setDataset] = React.useState('Soft Drinks');
+function makeUseMemoDemo({ memoize }){
+  return function UseMemoDemo({ trace }){
+  const [dataset, setDataset] = React.useState('A');
   const [filter, setFilter] = React.useState('');
-  const prices = dataset === 'Soft Drinks' ? MEMO_PRICES_A : MEMO_PRICES_B;
+  const items = dataset === 'A' ? MEMO_ITEMS_A : MEMO_ITEMS_B;
   const renderRef = React.useRef(0);
   renderRef.current++;
   const computeCount = React.useRef(0);
 
   React.useEffect(() => { trace.log('mount', 'PriceStats mounted', ''); }, []);
 
-  const averagePrice = React.useMemo(() => {
+  const computeAverage = () => {
     computeCount.current++;
-    trace.tick();
-    trace.log('memo', 'MEMO recalculated', 'dependency changed: prices');
-    if (!prices.length) return 0;
-    return prices.reduce((sum, item) => sum + item.shelfPrice, 0) / prices.length;
-  }, [prices]);
+    trace.log('memo',
+      memoize ? 'memo computed' : 'computed (no memo)',
+      `iterating ${items.length} items`,
+      memoize ? 'first run, or items dep changed' : 'no useMemo, recomputed every render'
+    );
+    if (!items.length) return 0;
+    return items.reduce((s, it) => s + it.price, 0) / items.length;
+  };
 
-  const promotionCount = React.useMemo(() => {
-    return prices.filter((item) => item.promoPrice).length;
-  }, [prices]);
+  const average = memoize
+    ? React.useMemo(computeAverage, [items])
+    : computeAverage();
 
   const handleType = (e) => {
     const v = e.target.value;
     trace.tick();
     trace.log('event', 'onChange filter', `value = "${v}"`);
-    trace.log('state', `setFilter("${v}")`, 'render reason: filter state changed, memo reuses prices result');
-    trace.log('render', 'PriceStats', 'reason: filter state changed');
+    trace.log('state', `setFilter("${v}")`, 're-render coming, but memo will SKIP');
     setFilter(v);
   };
 
   const swap = (k) => {
     if (k === dataset) return;
     trace.tick();
-    trace.log('event', 'switched category', `category = "${k}"`);
-    trace.log('state', `setDataset("${k}")`, 'prices changed, memo will recalculate');
-    trace.log('render', 'PriceStats', 'reason: prices state changed');
+    trace.log('event', 'switched dataset', `→ ${k}`);
+    trace.log('state', `setDataset("${k}")`, 'items changed, memo will RECOMPUTE');
     setDataset(k);
   };
 
@@ -78,65 +75,83 @@ function UseMemoDemo({ trace }){
     <div className="demo-frame">
       <div className="demo-stage">
         <div className="filter-row">
-          <button className={`chip ${dataset==='Soft Drinks'?'on':''}`} onClick={() => swap('Soft Drinks')}>Soft Drinks</button>
-          <button className={`chip ${dataset==='Coffee'?'on':''}`} onClick={() => swap('Coffee')}>Coffee</button>
+          <button className={`chip ${dataset==='A'?'on':''}`} onClick={() => swap('A')}>dataset A</button>
+          <button className={`chip ${dataset==='B'?'on':''}`} onClick={() => swap('B')}>dataset B</button>
         </div>
         <input
           className="demo-input"
           value={filter}
           onChange={handleType}
-          placeholder="Type here: memo should not recalculate"
+          placeholder="Type here — memo should NOT recompute"
         />
-        <div className="stat-grid">
-          <div className="stat-card">
-            <div className="stat-label">Average shelf price</div>
-            <div className="stat-value">£{averagePrice.toFixed(2)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Promotion count</div>
-            <div className="stat-value">{promotionCount}</div>
-          </div>
-        </div>
         <div className="stat-card">
-          <div className="stat-sub">memo recalculated <b>{computeCount.current}</b>x | rendered <b>{renderRef.current}</b>x</div>
+          <div className="stat-label">average price</div>
+          <div className="stat-value">${average.toFixed(2)}</div>
+          <div className="stat-sub">computed <b>{computeCount.current}</b>× • rendered <b>{renderRef.current}</b>×</div>
         </div>
         <div className="demo-meta">
-          <button className="demo-reset" onClick={() => { setFilter(''); setDataset('Soft Drinks'); trace.clear(); renderRef.current = 0; computeCount.current = 0; }}>reset</button>
+          <button className="demo-reset" onClick={() => { setFilter(''); setDataset('A'); trace.clear(); renderRef.current = 0; computeCount.current = 0; }}>reset</button>
         </div>
       </div>
       <div className="demo-explainer">
-        <p><b>useMemo</b> caches derived dashboard metrics. Typing in the filter re-renders the component, but the average only recalculates when <code>prices</code> changes.</p>
+        <p><b>useMemo</b> caches a computed value between renders. As long as the dependencies (<code>[items]</code>) haven't changed, React reuses the previous result instead of recomputing.</p>
       </div>
       <Inspector
         renderCount={renderRef.current}
         groups={[
           { label: 'state', color: 'var(--accent-2)', component: 'PriceStats', entries: [
             { key: 'filter',  value: filter, changed: filter !== '' },
-            { key: 'dataset', value: dataset, changed: dataset !== 'Soft Drinks' },
-            { key: 'prices', value: prices, changed: dataset !== 'Soft Drinks' },
+            { key: 'dataset', value: dataset, changed: dataset !== 'A' },
           ]},
           { label: 'memo', color: 'var(--accent-5)', component: 'PriceStats', entries: [
-            { key: 'averagePrice', value: Number(averagePrice.toFixed(2)), changed: false },
-            { key: 'promotionCount', value: promotionCount, changed: false },
-            { key: 'recalculations', value: computeCount.current, changed: false },
+            { key: 'average', value: Number(average.toFixed(2)), changed: false },
+            { key: 'computes', value: computeCount.current, changed: false },
           ]}
         ]}
       />
     </div>
   );
+  };
 }
+
+const UseMemoGoodDemo = makeUseMemoDemo({ memoize: true });
+const UseMemoBadDemo  = makeUseMemoDemo({ memoize: false });
+
+const useMemoBadCode = `function PriceStats({ items }) {
+  const [filter, setFilter] = useState("");
+
+  // ❌ recomputes on every render — wasted work when only filter changed
+  const average = !items.length
+    ? 0
+    : items.reduce((s, it) => s + it.price, 0) / items.length;
+
+  return (
+    <div>
+      <input value={filter}
+        onChange={(e) => setFilter(e.target.value)} />
+      <p>Average: \${average.toFixed(2)}</p>
+    </div>
+  );
+}`;
 
 window.LESSON_useMemo = {
   id: 'useMemo',
   title: 'useMemo',
-  subtitle: 'derived dashboard metrics',
+  subtitle: 'cache derived values',
   code: useMemoLessonCode,
-  highlightLines: [4, 8, 10, 12],
-  interviewAnswer: 'I would use useMemo for derived values like average shelf price or promotion count, especially if the table is large. It keeps those calculations tied to the prices dependency, so unrelated state changes can re-render without repeating the work.',
+  highlightLines: [4, 8],
   notes: [
     { title: 'When to reach for it', body: 'Only when a computation is genuinely expensive, or when the result must be referentially stable (e.g. fed into another memo or effect dep array).' },
     { title: 'Not for free', body: 'useMemo itself has overhead. For cheap operations, plain reassignment is faster than memoizing.' },
-    { title: 'Try it', body: 'Type into the input: the component re-renders but prices has not changed, so the memoized average is reused. Switch category and the memo recalculates.' },
+    { title: 'Try it', body: 'Type into the input — the component re-renders but the memo notices items has not changed and skips. Switch dataset — memo recomputes.' },
   ],
-  Demo: UseMemoDemo,
+  variants: {
+    good: { code: useMemoLessonCode, highlightLines: [4,5,6,7,8,9], Demo: UseMemoGoodDemo },
+    bad:  { code: useMemoBadCode,    highlightLines: [4,5,6,7],     Demo: UseMemoBadDemo },
+  },
+  challenge: {
+    prompt: 'Type in the filter input. In Good mode the average is computed once (or only when items changes). In Bad mode the compute counter increases every keystroke. Why?',
+    answer: 'In Bad mode, calculateAverage runs inline during render — every render recomputes it, even when only filter changed. In Good mode, useMemo with [items] caches the value across renders and only recomputes when items actually changes; typing in the filter does not invalidate the memo.'
+  },
+  Demo: UseMemoGoodDemo,
 };

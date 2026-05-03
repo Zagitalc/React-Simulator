@@ -1,26 +1,18 @@
-/* Lesson 6: useCallback */
-const useCallbackLessonCode = `const PriceRow = memo(function PriceRow({
-  row,
-  selected,
-  onToggleWatch
-}) {
-  return (
-    <tr>
-      <td>{row.product}</td>
-      <td>£{row.shelfPrice.toFixed(2)}</td>
-      <td>
-        <button onClick={() => onToggleWatch(row.id)}>
-          {selected ? "Watching" : "Watch"}
-        </button>
-      </td>
-    </tr>
-  );
-});
+/* Lesson: useCallback — Good vs Bad with PriceDashboard / memoized PriceRow */
 
-function PriceDashboard({ prices }) {
-  const [selectedIds, setSelectedIds] = useState([]);
+const PRODUCTS = [
+  { id: 'ts-sd-1', name: 'Cola 12 x 330ml',     retailer: 'Tesco',  category: 'soft drinks', price: 6.00 },
+  { id: 'ts-sd-2', name: 'Sea Salt Crisps',     retailer: 'Tesco',  category: 'snacks',      price: 1.20 },
+  { id: 'ts-cr-1', name: 'Sourdough Loaf',      retailer: 'Tesco',  category: 'bakery',      price: 2.40 },
+  { id: 'oc-sd-1', name: 'Sparkling Water 6pk', retailer: 'Ocado',  category: 'soft drinks', price: 3.00 },
+  { id: 'oc-cr-1', name: 'Croissant 4pk',       retailer: 'Ocado',  category: 'bakery',      price: 2.80 },
+];
+
+const useCallbackGoodCode = `function PriceDashboard() {
   const [query, setQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
 
+  // stable function reference — same identity across renders
   const handleToggleWatch = useCallback((id) => {
     setSelectedIds((ids) =>
       ids.includes(id)
@@ -29,150 +21,281 @@ function PriceDashboard({ prices }) {
     );
   }, []);
 
-  return prices.map((row) => (
-    <PriceRow
-      key={row.id}
-      row={row}
-      selected={selectedIds.includes(row.id)}
-      onToggleWatch={handleToggleWatch}
-    />
-  ));
-}`;
-
-const CALLBACK_PRICES = [
-  { id: 'ts-sd-1', product: 'Cola 12 x 330ml', retailer: 'Tesco', shelfPrice: 5.50, promoPrice: 4.25, date: '2026-05-01' },
-  { id: 'ts-sd-2', product: 'Orange Fizz 2L', retailer: 'Tesco', shelfPrice: 1.85, promoPrice: 1.35, date: '2026-05-02' },
-  { id: 'ts-cr-1', product: 'Sea Salt Crisps 6pk', retailer: 'Tesco', shelfPrice: 2.25, promoPrice: 1.75, date: '2026-05-01' },
-];
-
-const PriceRowPreview = React.memo(function PriceRowPreview({ row, selected, onToggleWatch, traceRender }){
-  React.useEffect(() => {
-    traceRender(row.id);
-  });
-
   return (
-    <div className="tr">
-      <span>{row.product}</span>
-      <span>{row.retailer}</span>
-      <span className="num">£{row.shelfPrice.toFixed(2)}</span>
-      <span className="promo">{selected ? 'Watching' : 'Not watched'}</span>
-      <button className="todo-x" onClick={() => onToggleWatch(row.id)}>{selected ? 'remove' : 'watch'}</button>
-    </div>
-  );
-});
-
-function UseCallbackDemo({ trace }){
-  const [selectedIds, setSelectedIds] = React.useState([]);
-  const [query, setQuery] = React.useState('');
-  const renderRef = React.useRef(0);
-  const rowRenderCounts = React.useRef({});
-  const callbackRef = React.useRef(null);
-  renderRef.current++;
-
-  const handleToggleWatch = React.useCallback((id) => {
-    trace.tick();
-    trace.log('event', 'onClick watch row', `id = "${id}"`);
-    trace.log('state', 'setSelectedIds(updater)', 'watchlist state changed');
-    trace.log('render', 'PriceDashboard', 'reason: selectedIds state changed');
-    setSelectedIds(ids =>
-      ids.includes(id)
-        ? ids.filter(rowId => rowId !== id)
-        : [...ids, id]
-    );
-  }, []);
-
-  React.useEffect(() => {
-    callbackRef.current = handleToggleWatch;
-    trace.log('mount', 'PriceDashboard mounted', 'callback lesson');
-    trace.log('memo', 'useCallback stored function', 'deps = []');
-  }, [handleToggleWatch]);
-
-  const traceRowRender = React.useCallback((id) => {
-    rowRenderCounts.current[id] = (rowRenderCounts.current[id] || 0) + 1;
-  }, []);
-
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    trace.tick();
-    trace.log('event', 'onChange search', `value = "${value}"`);
-    trace.log('state', `setQuery("${value}")`, 'parent re-renders; row callback prop remains stable');
-    trace.log('render', 'PriceDashboard', 'reason: query state changed');
-    trace.log('prop', '<PriceRow>', 'onToggleWatch function reference unchanged');
-    setQuery(value);
-  };
-
-  const visiblePrices = CALLBACK_PRICES.filter(row =>
-    row.product.toLowerCase().includes(query.toLowerCase())
-  );
-
-  return (
-    <div className="demo-frame">
-      <div className="demo-stage">
-        <input
-          className="demo-input"
-          value={query}
-          onChange={handleSearch}
-          placeholder="Search rows: callback stays stable"
+    <>
+      <input value={query} onChange={(e) => setQuery(e.target.value)} />
+      {filtered.map((row) => (
+        <PriceRow
+          key={row.id}
+          row={row}
+          selected={selectedIds.includes(row.id)}
+          onToggleWatch={handleToggleWatch}
         />
-        <div className="data-table">
-          <div className="th">
-            <span>Product</span><span>Retailer</span><span>Shelf Price</span><span>Watchlist</span><span>Action</span>
-          </div>
-          {visiblePrices.map(row => (
-            <PriceRowPreview
-              key={row.id}
-              row={row}
-              selected={selectedIds.includes(row.id)}
-              onToggleWatch={handleToggleWatch}
-              traceRender={traceRowRender}
-            />
-          ))}
-          {visiblePrices.length === 0 && <div className="loading-row">no rows match search</div>}
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Callback identity</div>
-          <div className="stat-sub">stable function prop passed to memoized rows</div>
-        </div>
-        <div className="demo-meta">
-          <span>dashboard renders: <b>{renderRef.current}</b></span>
-          <button className="demo-reset" onClick={() => { setSelectedIds([]); setQuery(''); trace.clear(); renderRef.current = 0; rowRenderCounts.current = {}; callbackRef.current = null; }}>reset</button>
-        </div>
-      </div>
-      <div className="demo-explainer">
-        <p><b>useCallback</b> memoizes a function reference. That matters when a handler is passed to memoized children, because a new function prop can make those children render again.</p>
-      </div>
-      <Inspector
-        renderCount={renderRef.current}
-        groups={[
-          { label: 'state', color: 'var(--accent-2)', component: 'PriceDashboard', entries: [
-            { key: 'query', value: query, changed: query !== '' },
-            { key: 'selectedIds', value: selectedIds, changed: selectedIds.length > 0 },
-          ]},
-          { label: 'props', color: 'var(--accent)', component: 'PriceRow', entries: [
-            { key: 'onToggleWatch', value: 'stable fn()', changed: false },
-            { key: 'selected', value: selectedIds.length > 0, changed: selectedIds.length > 0 },
-          ]},
-          { label: 'memo', color: 'var(--accent-5)', component: 'PriceRow', entries: [
-            { key: 'React.memo', value: true, changed: false },
-            { key: 'rowRenderCounts', value: rowRenderCounts.current, changed: false },
-          ]}
-        ]}
-      />
-    </div>
+      ))}
+    </>
   );
 }
+
+const PriceRow = React.memo(function PriceRow({ row, selected, onToggleWatch }) {
+  return <button onClick={() => onToggleWatch(row.id)}>watch</button>;
+});`;
+
+const useCallbackBadCode = `function PriceDashboard() {
+  const [query, setQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  // ❌ recreated on every parent render — breaks React.memo
+  const handleToggleWatch = (id) => {
+    setSelectedIds((ids) =>
+      ids.includes(id)
+        ? ids.filter((rowId) => rowId !== id)
+        : [...ids, id]
+    );
+  };
+
+  return (
+    <>
+      <input value={query} onChange={(e) => setQuery(e.target.value)} />
+      {filtered.map((row) => (
+        <PriceRow
+          key={row.id}
+          row={row}
+          selected={selectedIds.includes(row.id)}
+          onToggleWatch={handleToggleWatch}
+        />
+      ))}
+    </>
+  );
+}`;
+
+function makePriceRow({ stable }){
+  const PriceRow = function PriceRow({ row, selected, onToggleWatch, trace }){
+    React.useEffect(() => {
+      trace && trace.bumpRender('PriceRow:' + row.id);
+    });
+    return (
+      <div className={`tr ${selected ? 'watched' : ''}`}>
+        <span>{row.name}</span>
+        <span className="num">£{row.price.toFixed(2)}</span>
+        <span className={`renders ${(trace && (trace.renderCounts['PriceRow:' + row.id] || 0) > 1) ? 'hot' : ''}`}>
+          ×{(trace && trace.renderCounts['PriceRow:' + row.id]) || 1}
+        </span>
+        <button
+          className={`watch-btn ${selected ? 'on' : ''}`}
+          onClick={() => onToggleWatch(row.id)}
+        >{selected ? '★ watched' : '☆ watch'}</button>
+      </div>
+    );
+  };
+  return stable ? React.memo(PriceRow) : PriceRow;
+}
+
+const PriceRowMemo = makePriceRow({ stable: true });
+
+function makeDashboard({ stableCallback }){
+  return function PriceDashboard({ trace }){
+    const [query, setQuery] = React.useState('');
+    const [selectedIds, setSelectedIds] = React.useState([]);
+    const renderRef = React.useRef(0);
+    renderRef.current++;
+
+    React.useEffect(() => {
+      trace.log('mount', 'PriceDashboard mounted', 'initial render');
+    }, []);
+
+    const prevQuery = React.useRef('');
+    React.useEffect(() => {
+      if (prevQuery.current !== query){
+        trace.log('render', 'PriceDashboard re-rendered', `query = "${query}"`);
+        const why = stableCallback
+          ? 'useCallback returned the same function between renders'
+          : 'normal functions are recreated on every parent render';
+        trace.log(
+          'prop',
+          stableCallback
+            ? 'onToggleWatch reference unchanged'
+            : 'onToggleWatch got new function reference',
+          `<PriceRow> propagation`,
+          why
+        );
+        if (stableCallback){
+          trace.log('memo', 'React.memo skipped unchanged rows', 'same props → same output', 'props identity stable');
+        } else {
+          trace.log('render', 'PriceRow rows re-rendered unnecessarily', 'every memoized row re-ran', 'function prop changed → React.memo bail-out failed');
+        }
+        prevQuery.current = query;
+      }
+    });
+
+    const handleToggleWatchStable = React.useCallback((id) => {
+      setSelectedIds(prev =>
+        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      );
+    }, []);
+
+    const handleToggleWatchUnstable = (id) => {
+      setSelectedIds(prev =>
+        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      );
+    };
+
+    const handleToggleWatch = stableCallback ? handleToggleWatchStable : handleToggleWatchUnstable;
+
+    const onSearchChange = (e) => {
+      const v = e.target.value;
+      trace.tick();
+      trace.log('event', 'onChange search input', `value = "${v}"`);
+      trace.log('state', `setQuery("${v}")`, `was "${query}"`);
+      setQuery(v);
+    };
+
+    const onWatchClick = (id) => {
+      trace.tick();
+      trace.log('event', 'onClick Watch', `row = ${id}`);
+      trace.log(
+        'state',
+        `setSelectedIds(toggle ${id})`,
+        selectedIds.includes(id) ? 'remove' : 'add'
+      );
+      handleToggleWatch(id);
+    };
+
+    const filtered = PRODUCTS.filter(p =>
+      query.length === 0 || p.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    return (
+      <div className="demo-frame">
+        <div className="demo-stage">
+          <input
+            className="demo-input"
+            placeholder="search products…"
+            value={query}
+            onChange={onSearchChange}
+          />
+          <div className="price-table">
+            <div className="th">
+              <span>Product</span>
+              <span>Price</span>
+              <span style={{textAlign:'right'}}>Renders</span>
+              <span>Action</span>
+            </div>
+            {filtered.map(row => (
+              <PriceRowMemo
+                key={row.id}
+                row={row}
+                selected={selectedIds.includes(row.id)}
+                onToggleWatch={onWatchClick}
+                trace={trace}
+              />
+            ))}
+            {filtered.length === 0 && (
+              <div className="loading-row">no rows match "{query}"</div>
+            )}
+          </div>
+          <div className="demo-meta">
+            <span>parent renders: <b>{renderRef.current}</b></span>
+            <span>callback identity: <b>{stableCallback ? 'stable' : 'new every render'}</b></span>
+          </div>
+        </div>
+        <div className="demo-explainer">
+          <p>
+            Type in the search box. In <b>Good</b> mode, only <code>PriceDashboard</code> re-renders — the row counters stay flat because <code>onToggleWatch</code> is a stable reference and <code>React.memo</code> can skip unchanged rows.
+            In <b>Bad</b> mode, the inline closure is a new value on every render, <code>React.memo</code> bails out, and every row re-renders.
+          </p>
+        </div>
+        <Inspector
+          renderCount={renderRef.current}
+          renderCounts={trace.renderCounts}
+          groups={[
+            { label: 'state', color: 'var(--accent-2)', component: 'PriceDashboard', entries: [
+              { key: 'query', value: query, changed: query.length > 0 },
+              { key: 'selectedIds', value: selectedIds, changed: selectedIds.length > 0 },
+            ]},
+          ]}
+        />
+      </div>
+    );
+  };
+}
+
+const UseCallbackGoodDemo = makeDashboard({ stableCallback: true });
+const UseCallbackBadDemo  = makeDashboard({ stableCallback: false });
 
 window.LESSON_useCallback = {
   id: 'useCallback',
   title: 'useCallback',
-  subtitle: 'stable handler props',
-  code: useCallbackLessonCode,
-  highlightLines: [21, 22, 28, 35],
-  interviewAnswer: 'I would use useCallback when I pass a handler into memoized child components and function identity matters. In this dashboard, the parent can re-render for search input changes without creating a new onToggleWatch prop for every price row.',
+  subtitle: 'stable function references for memoized children',
+  code: useCallbackGoodCode,
+  highlightLines: [6, 7, 8, 9, 10, 11, 12],
   notes: [
-    { title: 'What it memoizes', body: 'useCallback memoizes the function reference, not the result of calling the function. useMemo memoizes values; useCallback memoizes callbacks.' },
-    { title: 'When it helps', body: 'It helps when the callback is passed to memoized children, used in dependency arrays, or needs stable identity for another hook.' },
-    { title: 'When to skip it', body: 'Do not wrap every handler by default. If the function is cheap and not passed to memoized children, useCallback may add complexity without value.' },
+    { title: 'Why useCallback?', body: 'It returns the same function across renders so memoized children can skip work. Without it, every render hands children a brand-new function prop.' },
+    { title: 'React.memo + stable props', body: 'React.memo only skips re-rendering when props are referentially equal. A new function = new prop = no skip.' },
   ],
-  Demo: UseCallbackDemo,
+  variants: {
+    good: { code: useCallbackGoodCode, highlightLines: [6, 7, 8, 9, 10, 11, 12], Demo: UseCallbackGoodDemo },
+    bad:  { code: useCallbackBadCode,  highlightLines: [5, 6, 7, 8, 9, 10, 11], Demo: UseCallbackBadDemo },
+  },
+  challenge: {
+    prompt: 'Type "c" in the search box. Why did PriceDashboard re-render but PriceRow did not (Good mode)? And why did all rows re-render in Bad mode?',
+    answer: 'Typing changes query state in the parent, so PriceDashboard re-renders. In Good mode, useCallback returned the same handleToggleWatch function reference, so the prop passed to each memoized PriceRow was unchanged — React.memo bailed out and skipped rendering. In Bad mode, the inline arrow function is a brand-new value every render. React.memo does a shallow prop comparison, sees a different function reference, and re-renders every row.'
+  },
+  types: `// Domain types passed across the dashboard
+type PriceRowData = {
+  id: string;
+  name: string;
+  retailer: 'Tesco' | 'Ocado';
+  category: 'soft drinks' | 'snacks' | 'bakery';
+  price: number;
+};
+
+type PriceRowProps = {
+  row: PriceRowData;
+  selected: boolean;
+  onToggleWatch: (id: string) => void;
+};
+
+// useCallback signature
+function useCallback<T extends (...args: any[]) => any>(
+  fn: T,
+  deps: React.DependencyList
+): T;`,
+  backend: {
+    language: 'ts',
+    source: `// Koa-style route that the dashboard calls
+router.get('/api/prices', async (ctx) => {
+  const { retailer, category, q } = ctx.query;
+  const rows = await db.query(/* see SQL tab */, {
+    retailer,
+    category,
+    q: q ? \`%\${q}%\` : '%',
+  });
+  ctx.body = rows;
+});`,
+    flow: [
+      'user types in search → onChange handler',
+      'setQuery → React schedules re-render',
+      'PriceDashboard re-renders (filtered list recomputed locally)',
+      'in real app: useEffect with [query] would fire and call /api/prices',
+      'backend reads query, runs SQL, returns rows',
+      'setRows → table re-renders',
+    ],
+  },
+  sql: {
+    template: `SELECT
+  p.name,
+  r.name AS retailer,
+  ps.shelf_price,
+  ps.promo_price
+FROM price_snapshots ps
+JOIN retailer_products rp ON ps.retailer_product_id = rp.id
+JOIN products p           ON rp.product_id          = p.id
+JOIN retailers r          ON rp.retailer_id         = r.id
+WHERE r.name = :retailer
+  AND p.category = :category
+  AND p.name ILIKE :q
+ORDER BY ps.captured_at DESC;`,
+    params: (s) => ({ retailer: 'Tesco', category: 'soft drinks', q: s.query ? `%${s.query}%` : '%' }),
+  },
+  Demo: UseCallbackGoodDemo,
 };
