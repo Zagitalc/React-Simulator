@@ -71,5 +71,9 @@ window.LESSON_useState = {
     { title: 'Setter triggers render', body: 'Calling setCount tells React: this component is dirty, re-run it. React calls Counter() again with the new state.' },
     { title: 'Renders are functions', body: 'A "render" is just calling the component function. Same component, new state in, new JSX out.' },
   ],
+  challenge: {
+    prompt: 'Click the counter twice quickly. Why does each click cause exactly one re-render of Counter?',
+    answer: 'Each setCount call marks Counter as dirty. React batches updates within the same event tick, but here each click is its own tick, so React schedules a re-render per click. The component function re-runs with the new count value, returns new JSX, and React updates the DOM.'
+  },
   Demo: UseStateDemo,
 };

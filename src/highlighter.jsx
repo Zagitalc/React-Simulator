@@ -7,6 +7,46 @@ const KEYWORDS = new Set([
 const REACT_HOOKS = new Set([
   'useState','useEffect','useMemo','useCallback','useRef','useReducer','useContext','useLayoutEffect','useId'
 ]);
+const SQL_KEYWORDS = new Set([
+  'SELECT','FROM','JOIN','LEFT','RIGHT','INNER','OUTER','ON','WHERE','AND','OR','NOT','IN','IS','NULL',
+  'ORDER','BY','GROUP','HAVING','LIMIT','OFFSET','AS','DESC','ASC','INSERT','INTO','VALUES','UPDATE',
+  'SET','DELETE','CREATE','TABLE','DROP','ALTER','WITH','UNION','ALL','DISTINCT','CASE','WHEN','THEN',
+  'ELSE','END','BETWEEN','LIKE','EXISTS','COUNT','SUM','AVG','MIN','MAX'
+]);
+
+function tokenizeSql(src){
+  const out = [];
+  let i = 0;
+  const push = (t, v) => out.push({t,v});
+  while (i < src.length){
+    const c = src[i];
+    if (c === '-' && src[i+1] === '-'){
+      const j = src.indexOf('\n', i); const end = j === -1 ? src.length : j;
+      push('com', src.slice(i, end)); i = end; continue;
+    }
+    if (c === "'" || c === '"'){
+      const q = c; let j = i+1;
+      while (j < src.length && src[j] !== q){ j++; }
+      if (j < src.length) j++;
+      push('str', src.slice(i, j)); i = j; continue;
+    }
+    if (/[0-9]/.test(c)){
+      let j = i+1; while (j < src.length && /[0-9.]/.test(src[j])) j++;
+      push('num', src.slice(i, j)); i = j; continue;
+    }
+    if (/[A-Za-z_]/.test(c)){
+      let j = i+1; while (j < src.length && /[A-Za-z0-9_]/.test(src[j])) j++;
+      const word = src.slice(i, j);
+      if (SQL_KEYWORDS.has(word.toUpperCase())) push('kw', word);
+      else push('id', word);
+      i = j; continue;
+    }
+    if (/[(),;.*]/.test(c)){ push('punct', c); i++; continue; }
+    if (/[+\-=<>!]/.test(c)){ push('op', c); i++; continue; }
+    push('w', c); i++;
+  }
+  return out;
+}
 
 function tokenize(src){
   const out = [];
@@ -83,15 +123,16 @@ function tokenize(src){
   return out;
 }
 
-function CodeBlock({ code, highlightLines = [], onLineHover, onLineClick, activeLine }){
+function CodeBlock({ code, highlightLines = [], onLineHover, onLineClick, activeLine, mode }){
   const lines = code.split('\n');
+  const tk = mode === 'sql' ? tokenizeSql : tokenize;
   return (
     <div className="code-block">
       {lines.map((line, idx) => {
         const lineNum = idx + 1;
         const isHi = highlightLines.includes(lineNum);
         const isActive = activeLine === lineNum;
-        const tokens = tokenize(line);
+        const tokens = tk(line);
         return (
           <div
             key={idx}

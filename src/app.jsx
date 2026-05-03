@@ -5,10 +5,51 @@ const LESSONS = [
   window.LESSON_useState,
   window.LESSON_controlled,
   window.LESSON_props,
+  window.LESSON_useCallback,
   window.LESSON_useEffect,
   window.LESSON_useMemo,
   window.LESSON_list,
-];
+].filter(Boolean);
+
+// resolve { code, highlightLines, Demo } for the current variant (or fall back to lesson.code)
+function resolveVariant(lesson, variantId){
+  if (!lesson.variants) return { code: lesson.code, highlightLines: lesson.highlightLines, Demo: lesson.Demo };
+  const v = lesson.variants[variantId] || lesson.variants.good || Object.values(lesson.variants)[0];
+  return {
+    code: v.code || lesson.code,
+    highlightLines: v.highlightLines || lesson.highlightLines,
+    Demo: v.Demo || lesson.Demo,
+  };
+}
+
+// substitute :name placeholders in an SQL template with values from params object
+function fillSqlTemplate(template, params){
+  if (!template) return '';
+  return template.replace(/:(\w+)/g, (m, k) => {
+    if (params && params[k] != null) {
+      const v = params[k];
+      return typeof v === 'string' ? `'${v}'` : String(v);
+    }
+    return m;
+  });
+}
+
+function ChallengeCard({ challenge }){
+  const [shown, setShown] = React.useState(false);
+  if (!challenge) return null;
+  return (
+    <div className="challenge-card">
+      <span className="ch-tag">Challenge</span>
+      <div className="ch-prompt">{challenge.prompt}</div>
+      {!shown && (
+        <button className="ch-reveal" onClick={() => setShown(true)}>Reveal answer</button>
+      )}
+      {shown && (
+        <div className="ch-answer">{challenge.answer}</div>
+      )}
+    </div>
+  );
+}
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "light",
@@ -22,9 +63,20 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 function App(){
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [activeId, setActiveId] = useState(LESSONS[0].id);
+  const [variantId, setVariantId] = useState('good');
+  const [tabId, setTabId] = useState('code');
+  const [demoState, setDemoState] = useState({});
   const trace = useTrace();
 
   const lesson = LESSONS.find(l => l.id === activeId) || LESSONS[0];
+  const resolved = resolveVariant(lesson, variantId);
+  const variantKeys = lesson.variants ? Object.keys(lesson.variants) : [];
+
+  // build available tab list dynamically
+  const tabs = [{ id: 'code', label: 'Code' }];
+  if (lesson.types) tabs.push({ id: 'types', label: 'Types' });
+  if (lesson.backend) tabs.push({ id: 'backend', label: 'Backend' });
+  if (lesson.sql) tabs.push({ id: 'sql', label: 'SQL' });
 
   // Apply theme to <html data-theme>, persist
   useEffect(() => {
@@ -52,8 +104,19 @@ function App(){
     document.documentElement.toggleAttribute('data-compact', !!t.compact);
   }, [t.compact]);
 
-  // clear timeline when lesson changes
-  useEffect(() => { trace.clear(); }, [activeId]);
+  // clear timeline when lesson or variant changes; reset variant/tab on lesson change
+  useEffect(() => {
+    trace.clear();
+    setVariantId('good');
+    setTabId('code');
+    setDemoState({});
+  }, [activeId]);
+  useEffect(() => { trace.clear(); setDemoState({}); }, [variantId]);
+
+  // make sure tab is valid for this lesson
+  useEffect(() => {
+    if (!tabs.find(x => x.id === tabId)) setTabId('code');
+  }, [activeId, lesson.types, lesson.backend, lesson.sql]);
 
   return (
     <div className="app">
@@ -110,11 +173,57 @@ function App(){
                 {lesson.title}.jsx
               </div>
               <span className="panel-sub">{lesson.subtitle}</span>
+              {variantKeys.length > 1 && (
+                <div className="variant-toggle">
+                  {variantKeys.map(k => {
+                    const v = lesson.variants[k];
+                    const label = v.label || (k === 'good' ? 'Good' : k === 'bad' ? 'Bad' : k);
+                    return (
+                      <button
+                        key={k}
+                        className={`variant-btn ${k} ${variantId === k ? 'on' : ''}`}
+                        onClick={() => setVariantId(k)}
+                      >{label}</button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+            {tabs.length > 1 && (
+              <div className="tab-row">
+                {tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    className={`tab-btn ${tabId === tab.id ? 'on' : ''}`}
+                    onClick={() => setTabId(tab.id)}
+                  >{tab.label}</button>
+                ))}
+              </div>
+            )}
             <div className="code-wrap">
-              <CodeBlock code={lesson.code} highlightLines={lesson.highlightLines} />
+              {tabId === 'code' && (
+                <CodeBlock code={resolved.code} highlightLines={resolved.highlightLines} />
+              )}
+              {tabId === 'types' && lesson.types && (
+                <CodeBlock code={lesson.types} highlightLines={[]} />
+              )}
+              {tabId === 'backend' && lesson.backend && (
+                <CodeBlock code={lesson.backend.source} highlightLines={[]} />
+              )}
+              {tabId === 'sql' && lesson.sql && (
+                <CodeBlock
+                  code={fillSqlTemplate(lesson.sql.template, lesson.sql.params ? lesson.sql.params(demoState) : {})}
+                  highlightLines={[]}
+                  mode="sql"
+                />
+              )}
             </div>
-            {t.showNotes && lesson.notes && (
+            {tabId === 'backend' && lesson.backend && lesson.backend.flow && (
+              <ol className="flow-list">
+                {lesson.backend.flow.map((s, i) => <li key={i}>{s}</li>)}
+              </ol>
+            )}
+            {t.showNotes && lesson.notes && tabId === 'code' && (
               <div className="notes">
                 {lesson.notes.map((n, i) => (
                   <div key={i} className="note">
@@ -124,6 +233,7 @@ function App(){
                 ))}
               </div>
             )}
+            <ChallengeCard challenge={lesson.challenge} />
           </section>
 
           <section className="pane preview-pane">
@@ -132,10 +242,10 @@ function App(){
                 <span className="dot" style={{background:'var(--accent-2)'}}></span>
                 Preview
               </div>
-              <span className="panel-sub">live component</span>
+              <span className="panel-sub">live component {lesson.variants ? `· ${variantId}` : ''}</span>
             </div>
             <div className="preview-wrap">
-              <lesson.Demo trace={trace} key={lesson.id} />
+              <resolved.Demo trace={trace} variantId={variantId} onDemoState={setDemoState} key={lesson.id + ':' + variantId} />
             </div>
           </section>
 

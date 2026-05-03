@@ -70,5 +70,9 @@ window.LESSON_controlled = {
     { title: 'Why controlled?', body: 'Because React owns the input value, you can validate, transform, or sync it with other state. The input cannot drift away from your model.' },
     { title: 'The data round-trip', body: 'User types → onChange → setState → re-render → input shows new value. It feels instant but those steps really happen on every keystroke.' },
   ],
+  challenge: {
+    prompt: 'Type "abc" into the input. How many renders happen, and where does the typed value live between keystrokes?',
+    answer: 'Three renders — one per keystroke. The typed value lives in React state, not in the DOM input element. Each keystroke fires onChange → setState → React re-renders the component → React tells the input what value to show. The DOM input is essentially a slave to React state.'
+  },
   Demo: ControlledDemo,
 };

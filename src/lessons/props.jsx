@@ -99,5 +99,9 @@ window.LESSON_props = {
     { title: 'One-way data flow', body: 'Parent owns state, child receives it as a prop. To "change" a prop, the child asks the parent (via a callback prop) to update its state.' },
     { title: 'Re-renders cascade', body: 'When the parent re-renders with a new prop value, the child re-renders too. React diffs the JSX and updates only the parts that changed.' },
   ],
+  challenge: {
+    prompt: 'When the parent updates a prop, why does the child re-render even though its own state has not changed?',
+    answer: 'A child renders whenever its parent renders — that is how React propagates new prop values down. To skip the child render when its props are the same, wrap the child in React.memo (and keep callback props stable with useCallback). Without memo, React always re-runs the child function to diff its output against the previous JSX.'
+  },
   Demo: PropsDemo,
 };

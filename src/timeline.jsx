@@ -46,6 +46,7 @@ function Timeline({ events, onClear }){
                 <span className="tl-kind" style={{color: meta.color}}>{meta.label}</span>
                 <span className="tl-msg">{e.msg}</span>
                 {e.detail && <span className="tl-detail">{e.detail}</span>}
+                {e.why && <span className="tl-why">why: {e.why}</span>}
               </div>
             </React.Fragment>
           );
@@ -60,13 +61,32 @@ window.Timeline = Timeline;
 /* Hook: produce an event logger + state inspector data */
 function useTrace(){
   const [events, setEvents] = React.useState([]);
+  const [renderCounts, setRenderCounts] = React.useState({});
   const tickRef = React.useRef(0);
-  const log = React.useCallback((kind, msg, detail) => {
-    setEvents(prev => [...prev, { kind, msg, detail, tick: tickRef.current, t: Date.now() }]);
+  const log = React.useCallback((kind, msg, detail, why) => {
+    setEvents(prev => [...prev, { kind, msg, detail, why, tick: tickRef.current, t: Date.now() }]);
   }, []);
   const tick = React.useCallback(() => { tickRef.current++; }, []);
-  const clear = React.useCallback(() => { setEvents([]); tickRef.current = 0; }, []);
-  return { events, log, tick, clear };
+  const bumpRender = React.useCallback((key) => {
+    setRenderCounts(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+  }, []);
+  const clear = React.useCallback(() => {
+    setEvents([]);
+    setRenderCounts({});
+    tickRef.current = 0;
+  }, []);
+  // Keep the returned object identity-stable so memoized children
+  // that receive `trace` as a prop don't bail out unnecessarily.
+  // We mutate fields on a ref and surface live values via getters.
+  const apiRef = React.useRef(null);
+  if (!apiRef.current){
+    apiRef.current = { log, tick, clear, bumpRender };
+    Object.defineProperty(apiRef.current, 'events', { get: () => apiRef.current._events });
+    Object.defineProperty(apiRef.current, 'renderCounts', { get: () => apiRef.current._renderCounts });
+  }
+  apiRef.current._events = events;
+  apiRef.current._renderCounts = renderCounts;
+  return apiRef.current;
 }
 
 window.useTrace = useTrace;
