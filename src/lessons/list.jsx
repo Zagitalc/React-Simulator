@@ -162,6 +162,27 @@ window.LESSON_list = {
     { title: 'Why keys?', body: 'React uses keys to match items across renders. Without stable keys, React cannot tell if an item moved or changed, and child state ends up attached to position rather than data.' },
     { title: 'Use stable IDs', body: 'A row’s database ID is a perfect key. The array index is a fallback only when the list never reorders.' },
   ],
+  types: `type Todo = {
+  id: number;
+  text: string;
+};
+
+type TodoItemProps = {
+  todo: Todo;
+  onRemove: (id: Todo['id']) => void;
+};
+
+function TodoItem({ todo, onRemove }: TodoItemProps): JSX.Element {
+  const [watched, setWatched] = useState<boolean>(false);
+  return (
+    <li>
+      <button onClick={() => setWatched((value) => !value)} />
+      <button onClick={() => onRemove(todo.id)} />
+    </li>
+  );
+}
+
+type ListKey = Todo['id']; // preferred key type for stable identity`,
   variants: {
     good: { code: listGoodCode, highlightLines: [10, 11, 12], Demo: ListGoodDemo },
     bad:  { code: listBadCode,  highlightLines: [10, 11, 12], Demo: ListBadDemo },

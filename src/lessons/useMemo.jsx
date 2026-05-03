@@ -150,6 +150,26 @@ window.LESSON_useMemo = {
     { title: 'Not for free', body: 'useMemo itself has overhead. For cheap operations, plain reassignment is faster than memoizing.' },
     { title: 'Try it', body: 'Type into the input — the component re-renders but the memo notices items has not changed and skips. Switch dataset — memo recomputes.' },
   ],
+  types: `type PriceItem = {
+  id: number;
+  name: string;
+  price: number;
+};
+
+type PriceStatsProps = {
+  items: PriceItem[];
+};
+
+function PriceStats({ items }: PriceStatsProps): JSX.Element {
+  const [filter, setFilter] = useState<string>('');
+
+  const average = useMemo<number>(() => {
+    if (items.length === 0) return 0;
+    return items.reduce((sum, item) => sum + item.price, 0) / items.length;
+  }, [items]);
+
+  return <p>Average: £{average.toFixed(2)}</p>;
+}`,
   variants: {
     good: { code: useMemoLessonCode, highlightLines: [4,5,6,7,8,9], Demo: UseMemoGoodDemo },
     bad:  { code: useMemoBadCode,    highlightLines: [4,5,6,7],     Demo: UseMemoBadDemo },

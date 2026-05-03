@@ -72,6 +72,17 @@ window.LESSON_useState = {
     { title: 'Setter triggers render', body: 'Calling setRetailer tells React that the component needs to run again with the new state.' },
     { title: 'Dashboard relevance', body: 'Filters, selected rows, loading flags, and API results are common dashboard state values.' },
   ],
+  types: `type Retailer = 'Tesco' | "Sainsbury's" | 'Ocado';
+
+function RetailerFilter(): JSX.Element {
+  const [retailer, setRetailer] = useState<Retailer>('Tesco');
+
+  const changeRetailer = (value: Retailer): void => {
+    setRetailer(value);
+  };
+
+  return <button onClick={() => changeRetailer("Sainsbury's")} />;
+}`,
   challenge: {
     prompt: 'Click the counter twice quickly. Why does each click cause exactly one re-render of Counter?',
     answer: 'Each setCount call marks Counter as dirty. React batches updates within the same event tick, but here each click is its own tick, so React schedules a re-render per click. The component function re-runs with the new count value, returns new JSX, and React updates the DOM.'

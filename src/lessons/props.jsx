@@ -126,6 +126,27 @@ window.LESSON_props = {
     { title: 'One-way data flow', body: 'Parent state moves down into child props. To change data, the child would call a callback prop and let the parent update state.' },
     { title: 'Prop changes can re-render children', body: 'When PriceDashboard re-renders with changed props, PriceTable receives the new values and renders the right table state.' },
   ],
+  types: `type Retailer = 'Tesco' | "Sainsbury's" | 'Ocado';
+
+type PriceRow = {
+  id: string;
+  product: string;
+  retailer: Retailer;
+  shelfPrice: number;
+  promoPrice: number | null;
+  date: string;
+};
+
+type PriceTableProps = {
+  prices: PriceRow[];
+  loading: boolean;
+  selectedRetailer: Retailer;
+};
+
+function PriceTable(props: PriceTableProps): JSX.Element {
+  const { prices, loading, selectedRetailer } = props;
+  return <table>{/* render rows */}</table>;
+}`,
   challenge: {
     prompt: 'When the parent updates a prop, why does the child re-render even though its own state has not changed?',
     answer: 'A child renders whenever its parent renders — that is how React propagates new prop values down. To skip the child render when its props are the same, wrap the child in React.memo (and keep callback props stable with useCallback). Without memo, React always re-runs the child function to diff its output against the previous JSX.'
