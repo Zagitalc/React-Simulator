@@ -1,4 +1,4 @@
-/* Lesson 6: list rendering + keys */
+/* Lesson 7: list rendering + keys */
 const listLessonCode = `function PriceTable({ prices }) {
   return (
     <table>

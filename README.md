@@ -37,7 +37,8 @@ Each lesson includes live UI, highlighted code, an event timeline, an inspector,
 3. Props: parent dashboard state flows into a child `PriceTable`.
 4. `useEffect`: fetching prices when `retailer` or `category` changes.
 5. `useMemo`: deriving average shelf price and promotion count from table data.
-6. Lists and keys: using stable product IDs instead of array indexes.
+6. `useCallback`: keeping event handler props stable for memoized table rows.
+7. Lists and keys: using stable product IDs instead of array indexes.
 
 ## Timeline labels
 
@@ -80,6 +81,7 @@ src/
     list.jsx
     props.jsx
     useEffect.jsx
+    useCallback.jsx
     useMemo.jsx
     useState.jsx
 ```

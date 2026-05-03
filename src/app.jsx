@@ -1,5 +1,5 @@
 /* App shell */
-const { useState, useEffect, useRef, useMemo } = React;
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
 const LESSONS = [
   window.LESSON_useState,
@@ -7,6 +7,7 @@ const LESSONS = [
   window.LESSON_props,
   window.LESSON_useEffect,
   window.LESSON_useMemo,
+  window.LESSON_useCallback,
   window.LESSON_list,
 ];
 
