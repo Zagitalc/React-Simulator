@@ -1,58 +1,58 @@
 /* Lesson 1: useState */
-const useStateLessonCode = `function Counter() {
-  const [count, setCount] = useState(0);
+const useStateLessonCode = `function RetailerFilter() {
+  const [retailer, setRetailer] = useState("Tesco");
 
   return (
-    <button onClick={() => setCount(count + 1)}>
-      Count: {count}
+    <button onClick={() => setRetailer("Sainsbury's")}>
+      Retailer: {retailer}
     </button>
   );
 }`;
 
 function UseStateDemo({ trace }){
-  const [count, setCount] = React.useState(0);
+  const [retailer, setRetailer] = React.useState('Tesco');
   const renderRef = React.useRef(0);
   renderRef.current++;
 
   React.useEffect(() => {
-    trace.log('mount', 'Counter mounted', 'initial state set');
-    trace.log('render', 'Counter rendered', `count = 0`);
+    trace.log('mount', 'RetailerFilter mounted', 'retailer = "Tesco"');
+    trace.log('render', 'RetailerFilter', 'reason: initial mount');
   }, []);
 
-  const prevCount = React.useRef(0);
-  React.useEffect(() => {
-    if (prevCount.current !== count){
-      trace.log('render', 'Counter re-rendered', `count = ${count}`);
-      prevCount.current = count;
-    }
-  });
-
-  const handleClick = () => {
+  const changeRetailer = (value) => {
+    if (value === retailer) return;
     trace.tick();
-    trace.log('event', 'onClick fired', 'user clicked button');
-    trace.log('state', `setCount(${count + 1})`, `was ${count}, now ${count + 1}`);
-    setCount(c => c + 1);
+    trace.log('event', 'onClick retailer', `value = "${value}"`);
+    trace.log('state', `setRetailer("${value}")`, `was "${retailer}", now "${value}"`);
+    trace.log('render', 'RetailerFilter', 'reason: retailer state changed');
+    setRetailer(value);
   };
 
   return (
     <div className="demo-frame">
       <div className="demo-stage">
-        <button className="demo-btn" onClick={handleClick}>
-          Count: <b>{count}</b>
-        </button>
+        <div className="filter-row">
+          {['Tesco',"Sainsbury's",'Ocado'].map(r => (
+            <button key={r} className={`chip ${retailer === r ? 'on' : ''}`} onClick={() => changeRetailer(r)}>{r}</button>
+          ))}
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Selected retailer</div>
+          <div className="stat-value">{retailer}</div>
+          <div className="stat-sub">rendered <b>{renderRef.current}</b>x</div>
+        </div>
         <div className="demo-meta">
-          <span>renders: <b>{renderRef.current}</b></span>
-          <button className="demo-reset" onClick={() => { setCount(0); trace.clear(); renderRef.current = 0; }}>reset</button>
+          <button className="demo-reset" onClick={() => { setRetailer('Tesco'); trace.clear(); renderRef.current = 0; }}>reset</button>
         </div>
       </div>
       <div className="demo-explainer">
-        <p><b>State</b> is data that belongs to a component. When you call <code>setCount</code>, React schedules a re-render and the UI catches up to the new value.</p>
+        <p><b>State</b> is data owned by a component. Updating the retailer state schedules a render, so the selected filter and dashboard value stay in sync.</p>
       </div>
       <Inspector
         renderCount={renderRef.current}
         groups={[
-          { label: 'state', color: 'var(--accent-2)', component: 'Counter', entries: [
-            { key: 'count', value: count, changed: count !== 0 }
+          { label: 'state', color: 'var(--accent-2)', component: 'RetailerFilter', entries: [
+            { key: 'retailer', value: retailer, changed: retailer !== 'Tesco' }
           ]}
         ]}
       />
@@ -63,13 +63,14 @@ function UseStateDemo({ trace }){
 window.LESSON_useState = {
   id: 'useState',
   title: 'useState',
-  subtitle: 'state triggers re-renders',
+  subtitle: 'filter state changes render',
   code: useStateLessonCode,
   highlightLines: [2, 5],
+  interviewAnswer: 'useState stores component-owned values like the selected retailer. When the setter runs, React schedules a render and the UI updates from the new state.',
   notes: [
     { title: 'What is state?', body: 'A value the component remembers between renders. Each call to useState gives you the current value and a setter.' },
-    { title: 'Setter triggers render', body: 'Calling setCount tells React: this component is dirty, re-run it. React calls Counter() again with the new state.' },
-    { title: 'Renders are functions', body: 'A "render" is just calling the component function. Same component, new state in, new JSX out.' },
+    { title: 'Setter triggers render', body: 'Calling setRetailer tells React that the component needs to run again with the new state.' },
+    { title: 'Dashboard relevance', body: 'Filters, selected rows, loading flags, and API results are common dashboard state values.' },
   ],
   Demo: UseStateDemo,
 };

@@ -179,6 +179,22 @@
     font-size: 12.5px; line-height: 1.55; color: var(--fg-dim);
     text-wrap: pretty;
   }
+  .interview-answer{
+    border: 1px solid var(--line-2);
+    background: var(--bg);
+    border-left: 2px solid var(--accent-2);
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .answer-label{
+    font-family: var(--mono); font-size: 10px; color: var(--accent-2);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .answer-body{
+    font-size: 12.5px; line-height: 1.55; color: var(--fg);
+    text-wrap: pretty;
+  }
 
   /* preview pane */
   .preview-pane .preview-wrap{
@@ -327,7 +343,7 @@
     font-family: var(--mono); font-size: 12px;
   }
   .data-table .th, .data-table .tr{
-    display: grid; grid-template-columns: 60px 1fr 80px;
+    display: grid; grid-template-columns: 1.4fr 1fr 0.8fr 0.8fr 1fr;
     padding: 10px 14px; gap: 12px;
     border-bottom: 1px solid var(--line);
   }
@@ -338,6 +354,13 @@
   .data-table .tr:last-child{ border-bottom: none; }
   .data-table .tr:hover{ background: var(--bg-1); }
   .data-table .num{ color: var(--num); }
+  .data-table .promo{ color: var(--accent-2); }
+  .data-table .date{ color: var(--fg-dim); }
+  .error-row{
+    padding: 14px; color: var(--accent-4); text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: oklch(0.78 0.12 25 / 0.08);
+  }
   .loading-row{
     padding: 14px; color: var(--fg-mute); text-align: center;
     display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -363,6 +386,14 @@
   .stat-value{ font-family: var(--mono); font-size: 28px; color: var(--accent-2); font-weight: 600; }
   .stat-sub{ font-family: var(--mono); font-size: 11px; color: var(--fg-mute); }
   .stat-sub b{ color: var(--accent); font-weight: 500; }
+  .stat-grid{
+    display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  }
+  .small-code{
+    font-family: var(--mono); font-size: 11px; color: var(--fg-dim);
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 10px; line-height: 1.6;
+  }
 
   /* todo list */
   .todo-list{

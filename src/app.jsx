@@ -60,8 +60,8 @@ function App(){
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">⟨ R ⟩</span>
-          <span className="brand-name">React Simulator</span>
-          <span className="brand-tag">interactive visual debugger</span>
+          <span className="brand-name">Retail React Interview Simulator</span>
+          <span className="brand-tag">pricing dashboard visual debugger</span>
         </div>
         <div className="topbar-right">
           <span className="status">
@@ -92,11 +92,13 @@ function App(){
           {t.showLegend && (
             <div className="side-foot">
               <div className="legend">
-                <div className="legend-row"><span style={{color:'var(--accent-3)'}}>▲</span> event</div>
-                <div className="legend-row"><span style={{color:'var(--accent-2)'}}>●</span> state change</div>
-                <div className="legend-row"><span style={{color:'var(--accent)'}}>◆</span> render</div>
-                <div className="legend-row"><span style={{color:'var(--accent-5)'}}>✦</span> effect</div>
-                <div className="legend-row"><span style={{color:'var(--accent-4)'}}>↓</span> fetch</div>
+                <div className="legend-row"><span style={{color:'var(--accent-3)'}}>▲</span> EVENT</div>
+                <div className="legend-row"><span style={{color:'var(--accent-2)'}}>●</span> STATE</div>
+                <div className="legend-row"><span style={{color:'var(--accent)'}}>◆</span> RENDER</div>
+                <div className="legend-row"><span style={{color:'var(--accent-5)'}}>✦</span> EFFECT</div>
+                <div className="legend-row"><span style={{color:'var(--accent-4)'}}>↓</span> FETCH</div>
+                <div className="legend-row"><span style={{color:'var(--accent-5)'}}>✣</span> MEMO</div>
+                <div className="legend-row"><span style={{color:'var(--accent)'}}>→</span> PROP</div>
               </div>
             </div>
           )}
@@ -114,11 +116,17 @@ function App(){
             <div className="code-wrap">
               <CodeBlock code={lesson.code} highlightLines={lesson.highlightLines} />
             </div>
-            {t.showNotes && lesson.notes && (
-              <div className="notes">
-                {lesson.notes.map((n, i) => (
-                  <div key={i} className="note">
-                    <div className="note-title">{n.title}</div>
+          {t.showNotes && (lesson.interviewAnswer || lesson.notes) && (
+            <div className="notes">
+              {lesson.interviewAnswer && (
+                <div className="interview-answer">
+                  <div className="answer-label">Interview answer</div>
+                  <div className="answer-body">{lesson.interviewAnswer}</div>
+                </div>
+              )}
+              {(lesson.notes || []).map((n, i) => (
+                <div key={i} className="note">
+                  <div className="note-title">{n.title}</div>
                     <div className="note-body">{n.body}</div>
                   </div>
                 ))}

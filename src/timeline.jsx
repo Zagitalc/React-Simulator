@@ -1,14 +1,14 @@
 /* Timeline component shows the sequence of React events */
 
 const EVENT_META = {
-  render:    { icon: '◆', color: 'var(--accent)',   label: 'Render' },
-  state:     { icon: '●', color: 'var(--accent-2)', label: 'State' },
-  event:     { icon: '▲', color: 'var(--accent-3)', label: 'Event' },
-  effect:    { icon: '✦', color: 'var(--accent-5)', label: 'Effect' },
-  fetch:     { icon: '↓', color: 'var(--accent-4)', label: 'Fetch' },
-  mount:     { icon: '○', color: 'var(--fg-dim)',   label: 'Mount' },
-  prop:      { icon: '→', color: 'var(--accent)',   label: 'Prop' },
-  memo:      { icon: '✣', color: 'var(--accent-5)', label: 'Memo' },
+  render:    { icon: '◆', color: 'var(--accent)',   label: 'RENDER' },
+  state:     { icon: '●', color: 'var(--accent-2)', label: 'STATE' },
+  event:     { icon: '▲', color: 'var(--accent-3)', label: 'EVENT' },
+  effect:    { icon: '✦', color: 'var(--accent-5)', label: 'EFFECT' },
+  fetch:     { icon: '↓', color: 'var(--accent-4)', label: 'FETCH' },
+  mount:     { icon: '○', color: 'var(--fg-dim)',   label: 'MOUNT' },
+  prop:      { icon: '→', color: 'var(--accent)',   label: 'PROP' },
+  memo:      { icon: '✣', color: 'var(--accent-5)', label: 'MEMO' },
 };
 
 function Timeline({ events, onClear }){

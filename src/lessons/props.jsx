@@ -1,87 +1,113 @@
 /* Lesson 3: props */
-const propsLessonCode = `function Dashboard() {
-  const [user, setUser] = useState("Ada");
+const propsLessonCode = `function PriceDashboard() {
+  const [retailer, setRetailer] = useState("Tesco");
+  const prices = [
+    { id: 1, product: "Cola 12 x 330ml", shelfPrice: 5.50 },
+    { id: 2, product: "Orange Fizz 2L", shelfPrice: 1.85 },
+  ];
 
   return (
-    <div>
-      <select value={user} onChange={(e) => setUser(e.target.value)}>
-        <option>Ada</option>
-        <option>Linus</option>
-        <option>Grace</option>
-      </select>
-      <Greeting name={user} />
-    </div>
+    <PriceTable
+      prices={prices}
+      loading={false}
+      selectedRetailer={retailer}
+    />
   );
 }
 
-function Greeting({ name }) {
-  return <p>Hello, {name}!</p>;
+function PriceTable({ prices, loading, selectedRetailer }) {
+  return <table>{/* render pricing rows */}</table>;
 }`;
 
+const PROPS_PRICES = [
+  { id: 'ts-sd-1', product: 'Cola 12 x 330ml', retailer: 'Tesco', shelfPrice: 5.50, promoPrice: 4.25, date: '2026-05-01' },
+  { id: 'ts-sd-2', product: 'Orange Fizz 2L', retailer: 'Tesco', shelfPrice: 1.85, promoPrice: 1.35, date: '2026-05-02' },
+];
+
 function PropsDemo({ trace }){
-  const [user, setUser] = React.useState("Ada");
+  const [retailer, setRetailer] = React.useState('Tesco');
+  const [loading, setLoading] = React.useState(false);
   const parentRenders = React.useRef(0);
   parentRenders.current++;
 
   React.useEffect(() => {
-    trace.log('mount', 'Dashboard mounted', 'parent component');
-    trace.log('mount', 'Greeting mounted', 'child receives name="Ada"');
+    trace.log('mount', 'PriceDashboard mounted', 'parent owns state');
+    trace.log('prop', '<PriceTable>', 'prices = Array(2), loading = false, selectedRetailer = "Tesco"');
   }, []);
 
-  const prevUser = React.useRef("Ada");
-  React.useEffect(() => {
-    if (prevUser.current !== user){
-      trace.log('prop', `<Greeting name="${user}" />`, 'parent passes new prop');
-      trace.log('render', 'Greeting re-rendered', `name = "${user}"`);
-      prevUser.current = user;
-    }
-  });
-
-  const handleChange = (e) => {
-    const v = e.target.value;
+  const handleRetailer = (value) => {
+    if (value === retailer) return;
     trace.tick();
-    trace.log('event', 'onChange (parent select)', `value = "${v}"`);
-    trace.log('state', `setUser("${v}")`, `Dashboard state changed`);
-    trace.log('render', 'Dashboard re-rendered', 'child gets new prop');
-    setUser(v);
+    trace.log('event', 'onClick retailer filter', `value = "${value}"`);
+    trace.log('state', `setRetailer("${value}")`, 'parent state changed');
+    trace.log('render', 'PriceDashboard', 'reason: retailer state changed');
+    trace.log('prop', '<PriceTable>', `selectedRetailer = "${value}"`);
+    trace.log('render', 'PriceTable', 'reason: selectedRetailer prop changed');
+    setRetailer(value);
+  };
+
+  const toggleLoading = () => {
+    trace.tick();
+    trace.log('event', 'toggle loading', '');
+    trace.log('state', `setLoading(${!loading})`, 'parent state changed');
+    trace.log('prop', '<PriceTable>', `loading = ${!loading}`);
+    trace.log('render', 'PriceTable', 'reason: loading prop changed');
+    setLoading(v => !v);
   };
 
   return (
     <div className="demo-frame">
       <div className="demo-stage">
         <div className="parent-card">
-          <div className="card-tag">Dashboard <span className="card-sub">parent</span></div>
-          <select className="demo-select" value={user} onChange={handleChange}>
-            <option>Ada</option>
-            <option>Linus</option>
-            <option>Grace</option>
-            <option>Hedy</option>
-          </select>
+          <div className="card-tag">PriceDashboard <span className="card-sub">parent</span></div>
+          <div className="filter-row">
+            {['Tesco',"Sainsbury's",'Ocado'].map(r => (
+              <button key={r} className={`chip ${retailer === r ? 'on' : ''}`} onClick={() => handleRetailer(r)}>{r}</button>
+            ))}
+            <button className={`chip ${loading ? 'on' : ''}`} onClick={toggleLoading}>loading</button>
+          </div>
           <div className="prop-arrow">
-            <span>name=</span>
-            <span className="prop-val">"{user}"</span>
+            <span>prices, loading, selectedRetailer</span>
             <span className="arrow">↓</span>
           </div>
           <div className="child-card">
-            <div className="card-tag">Greeting <span className="card-sub">child</span></div>
-            <p className="greet">Hello, <b>{user}</b>!</p>
+            <div className="card-tag">PriceTable <span className="card-sub">child</span></div>
+            <div className="data-table">
+              <div className="th">
+                <span>Product</span><span>Retailer</span><span>Shelf Price</span><span>Promo Price</span><span>Date</span>
+              </div>
+              {loading && <div className="loading-row"><span className="spinner"></span> loading rows</div>}
+              {!loading && PROPS_PRICES.map(row => (
+                <div key={row.id} className="tr">
+                  <span>{row.product}</span>
+                  <span>{retailer}</span>
+                  <span className="num">£{row.shelfPrice.toFixed(2)}</span>
+                  <span className="promo">£{row.promoPrice.toFixed(2)}</span>
+                  <span className="date">{row.date}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <div className="demo-meta">
-          <button className="demo-reset" onClick={() => { setUser("Ada"); trace.clear(); parentRenders.current = 0; }}>reset</button>
+          <span>parent renders: <b>{parentRenders.current}</b></span>
+          <button className="demo-reset" onClick={() => { setRetailer('Tesco'); setLoading(false); trace.clear(); parentRenders.current = 0; }}>reset</button>
         </div>
       </div>
       <div className="demo-explainer">
-        <p><b>Props</b> flow downward. <code>Dashboard</code> owns the state; it passes <code>user</code> to <code>Greeting</code> as a prop. The child reads it but never mutates it.</p>
+        <p><b>Props</b> flow downward. <code>PriceDashboard</code> owns the filter and data state, then passes table-ready values into <code>PriceTable</code>.</p>
       </div>
       <Inspector
         renderCount={parentRenders.current}
         groups={[
-          { label: 'state', color: 'var(--accent-2)', component: 'Dashboard', entries: [
-            { key: 'user', value: user, changed: user !== 'Ada' }
+          { label: 'state', color: 'var(--accent-2)', component: 'PriceDashboard', entries: [
+            { key: 'retailer', value: retailer, changed: retailer !== 'Tesco' },
+            { key: 'loading', value: loading, changed: loading },
           ]},
-          { label: 'props', color: 'var(--accent)', component: 'Greeting', entries: [
-            { key: 'name', value: user, changed: user !== 'Ada' }
+          { label: 'props', color: 'var(--accent)', component: 'PriceTable', entries: [
+            { key: 'prices', value: PROPS_PRICES, changed: false },
+            { key: 'loading', value: loading, changed: loading },
+            { key: 'selectedRetailer', value: retailer, changed: retailer !== 'Tesco' },
           ]}
         ]}
       />
@@ -92,12 +118,13 @@ function PropsDemo({ trace }){
 window.LESSON_props = {
   id: 'props',
   title: 'Props',
-  subtitle: 'data flows down',
+  subtitle: 'parent state to table',
   code: propsLessonCode,
-  highlightLines: [11, 16],
+  highlightLines: [9, 10, 11, 12, 17],
+  interviewAnswer: 'The parent owns the state. It passes filtered data and loading state into the child table as props, so the child can stay focused on rendering rows and does not need to know where the data came from.',
   notes: [
-    { title: 'One-way data flow', body: 'Parent owns state, child receives it as a prop. To "change" a prop, the child asks the parent (via a callback prop) to update its state.' },
-    { title: 'Re-renders cascade', body: 'When the parent re-renders with a new prop value, the child re-renders too. React diffs the JSX and updates only the parts that changed.' },
+    { title: 'One-way data flow', body: 'Parent state moves down into child props. To change data, the child would call a callback prop and let the parent update state.' },
+    { title: 'Prop changes can re-render children', body: 'When PriceDashboard re-renders with changed props, PriceTable receives the new values and renders the right table state.' },
   ],
   Demo: PropsDemo,
 };
