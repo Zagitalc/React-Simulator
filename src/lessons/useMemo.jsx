@@ -42,11 +42,6 @@ function makeUseMemoDemo({ memoize }){
 
   const computeAverage = () => {
     computeCount.current++;
-    trace.log('memo',
-      memoize ? 'memo computed' : 'computed (no memo)',
-      `iterating ${items.length} items`,
-      memoize ? 'first run, or items dep changed' : 'no useMemo, recomputed every render'
-    );
     if (!items.length) return 0;
     return items.reduce((s, it) => s + it.price, 0) / items.length;
   };
@@ -59,7 +54,12 @@ function makeUseMemoDemo({ memoize }){
     const v = e.target.value;
     trace.tick();
     trace.log('event', 'onChange filter', `value = "${v}"`);
-    trace.log('state', `setFilter("${v}")`, 're-render coming, but memo will SKIP');
+    trace.log('state', `setFilter("${v}")`, 're-render coming');
+    trace.log('memo',
+      memoize ? 'memo reused previous average' : 'average recomputed during render',
+      memoize ? 'items dependency unchanged' : 'no useMemo cache',
+      memoize ? 'useMemo skipped work' : 'inline calculation runs every render'
+    );
     setFilter(v);
   };
 
@@ -68,6 +68,11 @@ function makeUseMemoDemo({ memoize }){
     trace.tick();
     trace.log('event', 'switched dataset', `→ ${k}`);
     trace.log('state', `setDataset("${k}")`, 'items changed, memo will RECOMPUTE');
+    trace.log('memo',
+      memoize ? 'memo will recompute average' : 'average will recompute',
+      'items dependency changed',
+      memoize ? 'useMemo invalidates cache' : 'inline calculation has no cache'
+    );
     setDataset(k);
   };
 

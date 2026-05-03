@@ -48,6 +48,8 @@ function makeUseEffectDemo({ depMode }){
     const renderRef = React.useRef(0);
     renderRef.current++;
     const requestId = React.useRef(0);
+    const everyModeRuns = React.useRef(0);
+    const everyModeWarned = React.useRef(false);
 
     React.useEffect(() => {
       onDemoState && onDemoState({ category });
@@ -88,8 +90,17 @@ function makeUseEffectDemo({ depMode }){
         runFetch(category); // captured at first render — won't update
       }, []);
     } else {
-      // every render — unconstrained
+      // every render — deliberately capped so the teaching demo cannot lock the page.
       React.useEffect(() => {
+        if (everyModeRuns.current >= 3){
+          if (!everyModeWarned.current){
+            everyModeWarned.current = true;
+            trace.log('effect', 'demo stopped repeated no-deps effect',
+              'capped after 3 runs', 'real code would keep fetching after every render');
+          }
+          return;
+        }
+        everyModeRuns.current++;
         trace.tick();
         runFetch(category);
       });

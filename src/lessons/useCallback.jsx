@@ -69,16 +69,16 @@ const useCallbackBadCode = `function PriceDashboard() {
 }`;
 
 function makePriceRow({ stable }){
-  const PriceRow = function PriceRow({ row, selected, onToggleWatch, trace }){
-    React.useEffect(() => {
-      trace && trace.bumpRender('PriceRow:' + row.id);
-    });
+  const PriceRow = function PriceRow({ row, selected, onToggleWatch, renderCountsRef }){
+    const key = 'PriceRow:' + row.id;
+    renderCountsRef.current[key] = (renderCountsRef.current[key] || 0) + 1;
+    const renders = renderCountsRef.current[key];
     return (
       <div className={`tr ${selected ? 'watched' : ''}`}>
         <span>{row.name}</span>
         <span className="num">£{row.price.toFixed(2)}</span>
-        <span className={`renders ${(trace && (trace.renderCounts['PriceRow:' + row.id] || 0) > 1) ? 'hot' : ''}`}>
-          ×{(trace && trace.renderCounts['PriceRow:' + row.id]) || 1}
+        <span className={`renders ${renders > 1 ? 'hot' : ''}`}>
+          ×{renders}
         </span>
         <button
           className={`watch-btn ${selected ? 'on' : ''}`}
@@ -97,6 +97,7 @@ function makeDashboard({ stableCallback }){
     const [query, setQuery] = React.useState('');
     const [selectedIds, setSelectedIds] = React.useState([]);
     const renderRef = React.useRef(0);
+    const rowRenderCountsRef = React.useRef({});
     renderRef.current++;
 
     React.useEffect(() => {
@@ -127,13 +128,21 @@ function makeDashboard({ stableCallback }){
       }
     });
 
+    const logWatch = React.useCallback((id) => {
+      trace.tick();
+      trace.log('event', 'onClick Watch', `row = ${id}`);
+      trace.log('state', `setSelectedIds(toggle ${id})`, 'toggle watchlist membership');
+    }, [trace]);
+
     const handleToggleWatchStable = React.useCallback((id) => {
+      logWatch(id);
       setSelectedIds(prev =>
         prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
       );
-    }, []);
+    }, [logWatch]);
 
     const handleToggleWatchUnstable = (id) => {
+      logWatch(id);
       setSelectedIds(prev =>
         prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
       );
@@ -147,17 +156,6 @@ function makeDashboard({ stableCallback }){
       trace.log('event', 'onChange search input', `value = "${v}"`);
       trace.log('state', `setQuery("${v}")`, `was "${query}"`);
       setQuery(v);
-    };
-
-    const onWatchClick = (id) => {
-      trace.tick();
-      trace.log('event', 'onClick Watch', `row = ${id}`);
-      trace.log(
-        'state',
-        `setSelectedIds(toggle ${id})`,
-        selectedIds.includes(id) ? 'remove' : 'add'
-      );
-      handleToggleWatch(id);
     };
 
     const filtered = PRODUCTS.filter(p =>
@@ -185,8 +183,8 @@ function makeDashboard({ stableCallback }){
                 key={row.id}
                 row={row}
                 selected={selectedIds.includes(row.id)}
-                onToggleWatch={onWatchClick}
-                trace={trace}
+                onToggleWatch={handleToggleWatch}
+                renderCountsRef={rowRenderCountsRef}
               />
             ))}
             {filtered.length === 0 && (
@@ -206,7 +204,7 @@ function makeDashboard({ stableCallback }){
         </div>
         <Inspector
           renderCount={renderRef.current}
-          renderCounts={trace.renderCounts}
+          renderCounts={rowRenderCountsRef.current}
           groups={[
             { label: 'state', color: 'var(--accent-2)', component: 'PriceDashboard', entries: [
               { key: 'query', value: query, changed: query.length > 0 },
