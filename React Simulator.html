@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>React Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  /* light theme (default) */
+  html[data-theme="light"]{
+    --bg:        #fafaf7;
+    --bg-1:      #f3f3ee;
+    --bg-2:      #eaeae3;
+    --bg-3:      #dcdcd2;
+    --line:      #e3e3db;
+    --line-2:    #d0d0c5;
+    --fg:        #1c1d1a;
+    --fg-dim:    #5d6168;
+    --fg-mute:   #8b8f97;
+    --accent:    oklch(0.55 0.13 215);
+    --accent-2:  oklch(0.55 0.13 145);
+    --accent-3:  oklch(0.60 0.14 60);
+    --accent-4:  oklch(0.58 0.16 25);
+    --accent-5:  oklch(0.55 0.13 295);
+    --accent-soft: oklch(0.55 0.13 215 / 0.10);
+    --kw:        oklch(0.50 0.16 295);
+    --str:       oklch(0.50 0.14 145);
+    --num:       oklch(0.55 0.14 60);
+    --fn:        oklch(0.50 0.14 215);
+    --com:       #9aa0a8;
+    --punct:     #6b6f78;
+    --shadow: 0 8px 28px -16px rgba(20,18,12,0.18);
+  }
+  html[data-theme="dark"]{
+    --bg:        #0e1014;
+    --bg-1:      #14171d;
+    --bg-2:      #1a1e26;
+    --bg-3:      #232833;
+    --line:      #262c38;
+    --line-2:    #323847;
+    --fg:        #e5e9f0;
+    --fg-dim:    #8a93a6;
+    --fg-mute:   #5a6273;
+    --accent:    oklch(0.78 0.12 215);
+    --accent-2:  oklch(0.78 0.12 145);
+    --accent-3:  oklch(0.78 0.12 60);
+    --accent-4:  oklch(0.78 0.12 25);
+    --accent-5:  oklch(0.78 0.12 295);
+    --accent-soft: oklch(0.78 0.12 215 / 0.12);
+    --kw:        oklch(0.78 0.12 295);
+    --str:       oklch(0.82 0.10 145);
+    --num:       oklch(0.82 0.10 60);
+    --fn:        oklch(0.82 0.10 215);
+    --com:       #5a6273;
+    --punct:     #8a93a6;
+    --shadow: 0 12px 40px -12px rgba(0,0,0,0.6);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;color:inherit}
+  ::selection{background:var(--accent-soft);color:var(--fg)}
+  /* scrollbar */
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:8px}
+  ::-webkit-scrollbar-thumb:hover{background:#3a4254}
+  #root{height:100%}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<script>
+  // initialize theme attribute before paint
+  (function(){
+    try {
+      const saved = localStorage.getItem('rs-theme');
+      document.documentElement.setAttribute('data-theme', saved || 'light');
+    } catch(e){
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  })();
+</script>
+<div id="root"></div>
+
+<script src="src/styles.js"></script>
+<script type="text/babel" src="src/highlighter.jsx"></script>
+<script type="text/babel" src="src/tweaks-panel.jsx"></script>
+<script type="text/babel" src="src/timeline.jsx"></script>
+<script type="text/babel" src="src/inspector.jsx"></script>
+<script type="text/babel" src="src/lessons/useState.jsx"></script>
+<script type="text/babel" src="src/lessons/controlled.jsx"></script>
+<script type="text/babel" src="src/lessons/props.jsx"></script>
+<script type="text/babel" src="src/lessons/useEffect.jsx"></script>
+<script type="text/babel" src="src/lessons/useMemo.jsx"></script>
+<script type="text/babel" src="src/lessons/list.jsx"></script>
+<script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>
